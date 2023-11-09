@@ -167,6 +167,19 @@ void dds_device::impl::on_notification( json && j, eprosima::fastdds::dds::Sampl
         // Check if this is a reply - maybe someone's waiting on it...
         if( control_sample )
         {
+#if 1
+            dds_sequence_number sequence_number;
+            if( control.nested( "wa-seq-number" ).get_ex( sequence_number ) )
+            {
+                std::unique_lock< std::mutex > lock( _replies_mutex );
+                auto replyit = _replies.find( sequence_number );
+                if( replyit != _replies.end() )
+                {
+                    replyit->second = std::move( j );
+                    _replies_cv.notify_all();
+                }
+            }
+#else
             // ["<prefix>.<entity>", <sequence-number>]
             if( control_sample.size() == 2 && control_sample.is_array() )
             {
@@ -190,6 +203,7 @@ void dds_device::impl::on_notification( json && j, eprosima::fastdds::dds::Sampl
                     }
                 }
             }
+#endif
         }
     }
     catch( std::exception const & e )
@@ -442,7 +456,16 @@ json dds_device::impl::query_option_value( const std::shared_ptr< dds_option > &
 void dds_device::impl::write_control_message( topics::flexible_msg && msg, json * reply )
 {
     assert( _control_writer != nullptr );
+#if 1
+    // WORKAROUND: SafeDDS does not communicate the GUID/sequence-number! Instead, we add our own ID to the 
+    auto j = msg.json_data();
+    static std::atomic< dds_sequence_number > global_sequence_number;
+    dds_sequence_number this_sequence_number = global_sequence_number.fetch_add( 1 );
+    j["wa-seq-number"] = this_sequence_number;
+    topics::flexible_msg( j ).write_to( *_control_writer );
+#else
     auto this_sequence_number = std::move( msg ).write_to( *_control_writer );
+#endif
     if( reply )
     {
         std::unique_lock< std::mutex > lock( _replies_mutex );
