@@ -1,7 +1,6 @@
 // License: Apache 2.0. See LICENSE file in root directory.
 // Copyright(c) 2015 Intel Corporation. All Rights Reserved.
 //! keep this file for syntex "pipeline"
-// view marker
 
 #include <algorithm>
 #include "pipeline.h"
@@ -27,6 +26,7 @@ namespace librealsense
         {
         }
 
+        //? view marker
         //* this is the destructor
         pipeline::~pipeline()
         {
