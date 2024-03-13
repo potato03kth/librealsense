@@ -26,7 +26,6 @@ namespace librealsense
         {
         }
 
-        //? view marker
         //* this is the destructor
         pipeline::~pipeline()
         {
@@ -94,6 +93,8 @@ namespace librealsense
                     }
                 }
             }
+
+            //? view marker
 
             assert(profile);
             if (!profile->_multistream.get_profiles().size())
