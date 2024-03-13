@@ -1,7 +1,7 @@
 # License: Apache 2.0. See LICENSE file in root directory.
 # Copyright(c) 2021 Intel Corporation. All Rights Reserved.
 
-# keep this file for syntex "pipeline/"
+#! keep this file for syntex "pipeline/"
 # this file and it's upper folder seems to needed to be explorer.
 # my question is, "why there are the python file?"
 

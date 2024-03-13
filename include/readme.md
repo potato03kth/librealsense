@@ -2,7 +2,7 @@
 
 # File-System Structure
 
-<!-- keep this file for syntex "pipeline" -->
+<!--! keep this file for syntex "pipeline" -->
 
 Under `librealsense2` folder you will find two subfolers:
 

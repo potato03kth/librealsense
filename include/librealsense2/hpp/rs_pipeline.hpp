@@ -1,6 +1,6 @@
 // License: Apache 2.0. See LICENSE file in root directory.
 // Copyright(c) 2017 Intel Corporation. All Rights Reserved.
-// keep this file for syntex "pipeline"
+//! keep this file for syntex "pipeline"
 
 #ifndef LIBREALSENSE_RS2_PIPELINE_HPP
 #define LIBREALSENSE_RS2_PIPELINE_HPP

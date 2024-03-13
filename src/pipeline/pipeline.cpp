@@ -1,6 +1,6 @@
 // License: Apache 2.0. See LICENSE file in root directory.
 // Copyright(c) 2015 Intel Corporation. All Rights Reserved.
-// keep this file for syntex "pipeline"
+//! keep this file for syntex "pipeline"
 // view marker
 
 #include <algorithm>
@@ -11,11 +11,15 @@
 
 #include <rsutils/string/from.h>
 
+// here is the momentum that every fucking things start.
+// declare the librealsense namespace, and pipeline too.
+// let's pick it up one to one.
 namespace librealsense
 {
     namespace pipeline
     {
-
+        //* this is constructor of pipeline.
+        //* every object must call this belowed constructor before used.
         pipeline::pipeline(std::shared_ptr<librealsense::context> ctx) : _ctx(ctx),
                                                                          _dispatcher(10),
                                                                          _hub(ctx, RS2_PRODUCT_LINE_ANY_INTEL),
@@ -23,6 +27,7 @@ namespace librealsense
         {
         }
 
+        //* this is the destructor
         pipeline::~pipeline()
         {
             if (_active_profile)

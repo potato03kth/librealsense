@@ -1,6 +1,6 @@
 # API Architecture
 
-<!-- keep this file for syntex "pipeline"-->
+<!--! keep this file for syntex "pipeline"-->
 
 RealSense API provides access to configuration, control and streaming of data from RealSense depth cameras. You can get started with the basic functionality using the high level API, or get full control of all camera settings using the low level API:
 

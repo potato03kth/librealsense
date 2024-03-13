@@ -5,7 +5,7 @@ Copyright(c) 2017 Intel Corporation. All Rights Reserved. */
  * \brief
  * Exposes RealSense processing-block functionality for C compilers
  */
-// keep this file for syntex "pipeline"
+//! keep this file for syntex "pipeline"
 
 #ifndef LIBREALSENSE_RS2_PIPELINE_H
 #define LIBREALSENSE_RS2_PIPELINE_H

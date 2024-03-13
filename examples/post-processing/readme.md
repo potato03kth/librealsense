@@ -2,7 +2,7 @@
 
 ## Overview
 
-<!-- keep this file for syntex "pipeline" -->
+<!--! keep this file for syntex "pipeline" -->
 
 This example demonstrates usage of the following processing blocks:
 
