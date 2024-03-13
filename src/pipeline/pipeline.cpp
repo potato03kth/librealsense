@@ -1,6 +1,7 @@
 // License: Apache 2.0. See LICENSE file in root directory.
 // Copyright(c) 2015 Intel Corporation. All Rights Reserved.
 // keep this file for syntex "pipeline"
+// view marker
 
 #include <algorithm>
 #include "pipeline.h"
@@ -14,6 +15,7 @@ namespace librealsense
 {
     namespace pipeline
     {
+
         pipeline::pipeline(std::shared_ptr<librealsense::context> ctx) : _ctx(ctx),
                                                                          _dispatcher(10),
                                                                          _hub(ctx, RS2_PRODUCT_LINE_ANY_INTEL),
