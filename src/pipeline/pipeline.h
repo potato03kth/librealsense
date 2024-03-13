@@ -1,5 +1,6 @@
 // License: Apache 2.0. See LICENSE file in root directory.
 // Copyright(c) 2015 Intel Corporation. All Rights Reserved.
+// keep this file for syntex "pipeline"
 
 #pragma once
 
@@ -20,19 +21,19 @@ namespace librealsense
         class pipeline : public std::enable_shared_from_this<pipeline>
         {
         public:
-            //Top level API
+            // Top level API
             explicit pipeline(std::shared_ptr<librealsense::context> ctx);
             virtual ~pipeline();
             std::shared_ptr<profile> start(std::shared_ptr<config> conf, frame_callback_ptr callback = nullptr);
             void stop();
             std::shared_ptr<profile> get_active_profile() const;
             frame_holder wait_for_frames(unsigned int timeout_ms);
-            bool poll_for_frames(frame_holder* frame);
-            bool try_wait_for_frames(frame_holder* frame, unsigned int timeout_ms);
+            bool poll_for_frames(frame_holder *frame);
+            bool try_wait_for_frames(frame_holder *frame, unsigned int timeout_ms);
 
-            //Non top level API
-            std::shared_ptr<device_interface> wait_for_device(const std::chrono::milliseconds& timeout = std::chrono::hours::max(),
-                const std::string& serial = "");
+            // Non top level API
+            std::shared_ptr<device_interface> wait_for_device(const std::chrono::milliseconds &timeout = std::chrono::hours::max(),
+                                                              const std::string &serial = "");
             std::shared_ptr<librealsense::context> get_context() const;
 
         protected:

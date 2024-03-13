@@ -1,9 +1,13 @@
 # License: Apache 2.0. See LICENSE file in root directory.
 # Copyright(c) 2021 Intel Corporation. All Rights Reserved.
 
-#test:device L500*
-#test:device D400*
-#test:device SR300*
+# keep this file for syntex "pipeline/"
+# this file and it's upper folder seems to needed to be explorer.
+# my question is, "why there are the python file?"
+
+# test:device L500*
+# test:device D400*
+# test:device SR300*
 
 import pyrealsense2 as rs
 from rspy import test
@@ -31,7 +35,8 @@ try:
     dev = pipeline_profile.get_device()
     ds = dev.first_depth_sensor()
     test.check(ds.supports(rs.option.depth_units))
-    test.check_equal(ds.get_option(rs.option.depth_units), depth_units_from_metadata)
+    test.check_equal(ds.get_option(rs.option.depth_units),
+                     depth_units_from_metadata)
 
     pipeline.stop()
 

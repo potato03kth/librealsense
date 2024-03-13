@@ -2,21 +2,24 @@
 
 ## Overview
 
+<!-- keep this file for syntex "pipeline" -->
+
 This example demonstrates usage of the following processing blocks:
 
-* Decimation
-  * Intelligently reduces the resolution of a depth frame.
-* Disparity
-  * Performs transformation between depth and disparity domains.
-  * Applicable for stereo-based depth sensors only (e.g. D400).
-* Spatial
-  * Applies edge-preserving smoothing of depth data.
-* Temporal
-  * Filters depth data by looking into previous frames.
+- Decimation
+  - Intelligently reduces the resolution of a depth frame.
+- Disparity
+  - Performs transformation between depth and disparity domains.
+  - Applicable for stereo-based depth sensors only (e.g. D400).
+- Spatial
+  - Applies edge-preserving smoothing of depth data.
+- Temporal
+  - Filters depth data by looking into previous frames.
 
 For further infomration please refer to [Depth Post-Processing for Intel® RealSense™ Depth Camera D400 Series](https://dev.intelrealsense.com/docs/depth-post-processing)
 
 ## Expected Output
+
 ![expected output](https://user-images.githubusercontent.com/22654243/35924136-dd9cd1b6-0c2a-11e8-925a-84a52c0a5b96.gif)
 
 This application displays a rotating point cloud of the depth frame, with GUI for controlling the filters' options, and a checkbox to enable/disable each one.
@@ -34,7 +37,7 @@ As with any SDK application we include the Intel RealSense Cross Platform API:
 In this example we will also use the auxiliary library of `example.hpp`:
 
 ```cpp
-#include "../example.hpp"    
+#include "../example.hpp"
 ```
 
 `examples.hpp` lets us easily open a new window and prepare textures for rendering.
@@ -81,7 +84,6 @@ public:
     std::atomic_bool is_enabled;                               //A boolean controlled by the user that determines whether to apply the filter or not
 };
 ```
-
 
 `filter_options` holds a reference to the actual filter, as a `rs2::process_interface&` which allows options controls and calling the `process()` method.
 In addition it holds a map between the filter's options and its matching slider. And finally it holds a boolean for toggling the user's wish to apply the filter or not.
@@ -162,6 +164,7 @@ iteration is promised to remain the same, we can safely assume that filtering wi
 be performed in that order (Decimate --> To Disparity --> Spatial --> Temporal).
 
 Afterwards, we declare 2 concurrent frame queues to help us exchange data between threads.
+
 ```cpp
 // Declaring two concurrent queues that will be used to push and pop frames from different threads
 rs2::frame_queue original_data;
@@ -169,11 +172,14 @@ rs2::frame_queue filtered_data;
 ```
 
 Then, a `rs2::colorizer` to allow the point cloud visualization have a texture:
+
 ```cpp
 // Declare depth colorizer for pretty visualization of depth data
  rs2::colorizer color_map;
- ```
+```
+
 and finally, using an atomic boolean to help flag the processing thread that it should stop:
+
 ```cpp
 // Atomic boolean to allow thread safe way to stop the thread
 std::atomic_bool stopped(false);
@@ -185,64 +191,64 @@ The `processing_thread` will do the following actions, to make the main thread m
 
 1. Get the data from the pipeline, and hold an instance to a filtered frame:
 
-  ```cpp
-  // Create a thread for getting frames from the device and process them
-  // to prevent UI thread from blocking due to long computations.
-  std::thread processing_thread([&]() {
-      while (!stopped) //While application is running
-      {
-          rs2::frameset data = pipe.wait_for_frames(); // Wait for next set of frames from the camera
+```cpp
+// Create a thread for getting frames from the device and process them
+// to prevent UI thread from blocking due to long computations.
+std::thread processing_thread([&]() {
+    while (!stopped) //While application is running
+    {
+        rs2::frameset data = pipe.wait_for_frames(); // Wait for next set of frames from the camera
 
-          rs2::frame depth_frame = data.get_depth_frame(); //Take the depth frame from the frameset
-          if (!depth_frame) // Should not happen but if the pipeline is configured differently
-              return;       //  it might not provide depth and we don't want to crash
+        rs2::frame depth_frame = data.get_depth_frame(); //Take the depth frame from the frameset
+        if (!depth_frame) // Should not happen but if the pipeline is configured differently
+            return;       //  it might not provide depth and we don't want to crash
 
-          rs2::frame filtered = depth_frame; // Does not copy the frame, only adds a reference
-  ```
+        rs2::frame filtered = depth_frame; // Does not copy the frame, only adds a reference
+```
 
 2. Apply all filters to the depth frame, one after the other:
 
-  ```cpp
-          /* Apply filters.
-          The implemented flow of the filters pipeline is in the following order:
-          1. apply decimation filter
-          2. transform the scence into disparity domain
-          3. apply spatial filter
-          4. apply temporal filter
-          5. revert the results back (if step Disparity filter was applied
-          to depth domain (each post processing block is optional and can be applied independantly).
-          */
-          bool revert_disparity = false;
-          for (auto&& filter : filters)
-          {
-              if (filter.is_enabled)
-              {
-                  filtered = filter.filter.process(filtered);
-                  if (filter.filter_name == disparity_filter_name)
-                  {
-                      revert_disparity = true;
-                  }
-              }
-          }
-          if (revert_disparity)
-          {
-              filtered = disparity_to_depth.process(filtered);
-          }
-  ```
+```cpp
+        /* Apply filters.
+        The implemented flow of the filters pipeline is in the following order:
+        1. apply decimation filter
+        2. transform the scence into disparity domain
+        3. apply spatial filter
+        4. apply temporal filter
+        5. revert the results back (if step Disparity filter was applied
+        to depth domain (each post processing block is optional and can be applied independantly).
+        */
+        bool revert_disparity = false;
+        for (auto&& filter : filters)
+        {
+            if (filter.is_enabled)
+            {
+                filtered = filter.filter.process(filtered);
+                if (filter.filter_name == disparity_filter_name)
+                {
+                    revert_disparity = true;
+                }
+            }
+        }
+        if (revert_disparity)
+        {
+            filtered = disparity_to_depth.process(filtered);
+        }
+```
 
 3. Push the original depth frame, and the filtered one, each to its respective queue:
 
-  ```cpp
-          // Push filtered & original data to their respective queues
-          // Note, pushing to two different queues might cause the application to display
-          //  original and filtered pointclouds from different depth frames
-          //  To make sure they are synchronized you need to push them together or add some
-          //  synchronization mechanisms
-          filtered_data.enqueue(filtered);
-          original_data.enqueue(depth_frame);
-      }
-  });
-  ```
+```cpp
+        // Push filtered & original data to their respective queues
+        // Note, pushing to two different queues might cause the application to display
+        //  original and filtered pointclouds from different depth frames
+        //  To make sure they are synchronized you need to push them together or add some
+        //  synchronization mechanisms
+        filtered_data.enqueue(filtered);
+        original_data.enqueue(depth_frame);
+    }
+});
+```
 
 ### Main thread
 
@@ -259,6 +265,7 @@ rs2::points filtered_points;
 ```
 
 Next, prior to starting the main loop, we define some additional variables to help with the rotation of the pointcloud:
+
 ```cpp
 // Save the time of last frame's arrival
 auto last_time = std::chrono::high_resolution_clock::now();

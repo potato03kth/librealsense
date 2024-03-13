@@ -1,5 +1,6 @@
 // License: Apache 2.0. See LICENSE file in root directory.
 // Copyright(c) 2015 Intel Corporation. All Rights Reserved.
+// keep this file for syntex "pipeline"
 
 #include <algorithm>
 #include "pipeline.h"
@@ -9,25 +10,28 @@
 
 #include <rsutils/string/from.h>
 
-
 namespace librealsense
 {
     namespace pipeline
     {
-        pipeline::pipeline(std::shared_ptr<librealsense::context> ctx) :
-            _ctx(ctx),
-            _dispatcher(10),
-            _hub(ctx, RS2_PRODUCT_LINE_ANY_INTEL),
-            _synced_streams({ RS2_STREAM_COLOR, RS2_STREAM_DEPTH, RS2_STREAM_INFRARED, RS2_STREAM_FISHEYE })
-        {}
+        pipeline::pipeline(std::shared_ptr<librealsense::context> ctx) : _ctx(ctx),
+                                                                         _dispatcher(10),
+                                                                         _hub(ctx, RS2_PRODUCT_LINE_ANY_INTEL),
+                                                                         _synced_streams({RS2_STREAM_COLOR, RS2_STREAM_DEPTH, RS2_STREAM_INFRARED, RS2_STREAM_FISHEYE})
+        {
+        }
 
         pipeline::~pipeline()
         {
-            if (_active_profile) {
-                try {
+            if (_active_profile)
+            {
+                try
+                {
                     unsafe_stop();
                 }
-                catch (...) {}
+                catch (...)
+                {
+                }
             }
         }
 
@@ -60,7 +64,7 @@ namespace librealsense
         void pipeline::unsafe_start(std::shared_ptr<config> conf)
         {
             std::shared_ptr<profile> profile = nullptr;
-            //first try to get the previously resolved profile (if exists)
+            // first try to get the previously resolved profile (if exists)
             auto cached_profile = conf->get_cached_resolved_profile();
             if (cached_profile)
             {
@@ -100,15 +104,14 @@ namespace librealsense
                     if (status == RS2_PLAYBACK_STATUS_STOPPED)
                     {
                         _dispatcher.invoke([this, callbacks](dispatcher::cancellable_timer t)
-                        {
+                                           {
                             //If the pipeline holds a playback device, and it reached the end of file (stopped)
                             //Then we restart it
                             if (_active_profile && _prev_conf->get_repeat_playback())
                             {
                                 _active_profile->_multistream.open();
                                 _active_profile->_multistream.start(callbacks);
-                            }
-                        });
+                            } });
                     }
                 };
             }
@@ -159,7 +162,7 @@ namespace librealsense
             }
         }
 
-        std::shared_ptr<device_interface> pipeline::wait_for_device(const std::chrono::milliseconds& timeout, const std::string& serial)
+        std::shared_ptr<device_interface> pipeline::wait_for_device(const std::chrono::milliseconds &timeout, const std::string &serial)
         {
             // pipeline's device selection shall be deterministic
             return _hub.wait_for_device(timeout, false, serial);
@@ -178,13 +181,13 @@ namespace librealsense
             if (std::find(_synced_streams.begin(), _synced_streams.end(), RS2_STREAM_ANY) != _synced_streams.end())
                 sync_any = true;
             // check wich of the active profiles should be synced and update the sync list accordinglly
-            for (auto&& s : profile->get_active_streams())
+            for (auto &&s : profile->get_active_streams())
             {
                 _streams_to_aggregate_ids.push_back(s->get_unique_id());
                 bool sync_current = sync_any;
                 if (!sync_any && std::find(_synced_streams.begin(), _synced_streams.end(), s->get_stream_type()) != _synced_streams.end())
                     sync_current = true;
-                if(sync_current)
+                if (sync_current)
                     _streams_to_sync_ids.push_back(s->get_unique_id());
             }
 
@@ -206,8 +209,8 @@ namespace librealsense
 
             frame_callback_ptr to_pipeline_process = {
                 new internal_frame_callback<decltype(pipeline_process_callback)>(pipeline_process_callback),
-                [](rs2_frame_callback* p) { p->release(); }
-            };
+                [](rs2_frame_callback *p)
+                { p->release(); }};
 
             _syncer->set_output_callback(to_pipeline_process);
 
@@ -222,8 +225,8 @@ namespace librealsense
 
             frame_callback_ptr rv = {
                 new internal_frame_callback<decltype(to_syncer)>(to_syncer),
-                [](rs2_frame_callback* p) { p->release(); }
-            };
+                [](rs2_frame_callback *p)
+                { p->release(); }};
 
             return rv;
         }
@@ -246,7 +249,7 @@ namespace librealsense
                 return f;
             }
 
-            //hub returns true even if device already reconnected
+            // hub returns true even if device already reconnected
             if (!_hub.is_connected(*_active_profile->get_device()))
             {
                 try
@@ -259,18 +262,17 @@ namespace librealsense
                     {
                         return f;
                     }
-
                 }
-                catch (const std::exception& e)
+                catch (const std::exception &e)
                 {
-                    throw std::runtime_error( rsutils::string::from() << "Device disconnected. Failed to reconnect: "
-                                                                      << e.what() << timeout_ms );
+                    throw std::runtime_error(rsutils::string::from() << "Device disconnected. Failed to reconnect: "
+                                                                     << e.what() << timeout_ms);
                 }
             }
-            throw std::runtime_error( rsutils::string::from() << "Frame didn't arrive within " << timeout_ms );
+            throw std::runtime_error(rsutils::string::from() << "Frame didn't arrive within " << timeout_ms);
         }
 
-        bool pipeline::poll_for_frames(frame_holder* frame)
+        bool pipeline::poll_for_frames(frame_holder *frame)
         {
             std::lock_guard<std::mutex> lock(_mtx);
 
@@ -290,7 +292,7 @@ namespace librealsense
             return false;
         }
 
-        bool pipeline::try_wait_for_frames(frame_holder* frame, unsigned int timeout_ms)
+        bool pipeline::try_wait_for_frames(frame_holder *frame, unsigned int timeout_ms)
         {
             std::lock_guard<std::mutex> lock(_mtx);
             if (!_active_profile)
@@ -307,7 +309,7 @@ namespace librealsense
                 return true;
             }
 
-            //hub returns true even if device already reconnected
+            // hub returns true even if device already reconnected
             if (!_hub.is_connected(*_active_profile->get_device()))
             {
                 try
@@ -317,7 +319,7 @@ namespace librealsense
                     unsafe_start(prev_conf);
                     return _aggregator->dequeue(frame, timeout_ms);
                 }
-                catch (const std::exception& e)
+                catch (const std::exception &e)
                 {
                     LOG_INFO(e.what());
                     return false;

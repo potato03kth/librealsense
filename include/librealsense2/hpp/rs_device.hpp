@@ -1,6 +1,6 @@
 // License: Apache 2.0. See LICENSE file in root directory.
 // Copyright(c) 2017 Intel Corporation. All Rights Reserved.
-
+// keep this file for syntex "pipeline"
 #ifndef LIBREALSENSE_RS2_DEVICE_HPP
 #define LIBREALSENSE_RS2_DEVICE_HPP
 
@@ -19,12 +19,12 @@ namespace rs2
     {
     public:
         /**
-        * returns the list of adjacent devices, sharing the same physical parent composite device
-        * \return            the list of adjacent devices
-        */
+         * returns the list of adjacent devices, sharing the same physical parent composite device
+         * \return            the list of adjacent devices
+         */
         std::vector<sensor> query_sensors() const
         {
-            rs2_error* e = nullptr;
+            rs2_error *e = nullptr;
             std::shared_ptr<rs2_sensor_list> list(
                 rs2_query_sensors(_dev.get(), &e),
                 rs2_delete_sensor_list);
@@ -48,60 +48,61 @@ namespace rs2
             return results;
         }
 
-        template<class T>
+        template <class T>
         T first() const
         {
-            for (auto&& s : query_sensors())
+            for (auto &&s : query_sensors())
             {
-                if (auto t = s.as<T>()) return t;
+                if (auto t = s.as<T>())
+                    return t;
             }
             throw rs2::error("Could not find requested sensor type!");
         }
 
         /**
-        * check if specific camera info is supported
-        * \param[in] info    the parameter to check for support
-        * \return                true if the parameter both exist and well-defined for the specific device
-        */
+         * check if specific camera info is supported
+         * \param[in] info    the parameter to check for support
+         * \return                true if the parameter both exist and well-defined for the specific device
+         */
         bool supports(rs2_camera_info info) const
         {
-            rs2_error* e = nullptr;
+            rs2_error *e = nullptr;
             auto is_supported = rs2_supports_device_info(_dev.get(), info, &e);
             error::handle(e);
             return is_supported > 0;
         }
 
         /**
-        * retrieve camera specific information, like versions of various internal components
-        * \param[in] info     camera info type to retrieve
-        * \return             the requested camera info string, in a format specific to the device model
-        */
-        const char* get_info(rs2_camera_info info) const
+         * retrieve camera specific information, like versions of various internal components
+         * \param[in] info     camera info type to retrieve
+         * \return             the requested camera info string, in a format specific to the device model
+         */
+        const char *get_info(rs2_camera_info info) const
         {
-            rs2_error* e = nullptr;
+            rs2_error *e = nullptr;
             auto result = rs2_get_device_info(_dev.get(), info, &e);
             error::handle(e);
             return result;
         }
 
         /**
-        * send hardware reset request to the device
-        */
+         * send hardware reset request to the device
+         */
         void hardware_reset()
         {
-            rs2_error* e = nullptr;
+            rs2_error *e = nullptr;
 
             rs2_hardware_reset(_dev.get(), &e);
             error::handle(e);
         }
 
-        device& operator=(const std::shared_ptr<rs2_device> dev)
+        device &operator=(const std::shared_ptr<rs2_device> dev)
         {
             _dev.reset();
             _dev = dev;
             return *this;
         }
-        device& operator=(const device& dev)
+        device &operator=(const device &dev)
         {
             *this = nullptr;
             _dev = dev._dev;
@@ -113,19 +114,19 @@ namespace rs2
         {
             return _dev != nullptr;
         }
-        const std::shared_ptr<rs2_device>& get() const
+        const std::shared_ptr<rs2_device> &get() const
         {
             return _dev;
         }
 
-        template<class T>
+        template <class T>
         bool is() const
         {
             T extension(*this);
             return extension;
         }
 
-        template<class T>
+        template <class T>
         T as() const
         {
             T extension(*this);
@@ -137,6 +138,7 @@ namespace rs2
 
         explicit operator std::shared_ptr<rs2_device>() { return _dev; };
         explicit device(std::shared_ptr<rs2_device> dev) : _dev(dev) {}
+
     protected:
         friend class rs2::context;
         friend class rs2::device_list;
@@ -144,10 +146,9 @@ namespace rs2
         friend class rs2::device_hub;
 
         std::shared_ptr<rs2_device> _dev;
-
     };
 
-    template<class T>
+    template <class T>
     class update_progress_callback : public rs2_update_progress_callback
     {
         T _callback;
@@ -170,7 +171,7 @@ namespace rs2
         updatable(device d)
             : device(d.get())
         {
-            rs2_error* e = nullptr;
+            rs2_error *e = nullptr;
             if (rs2_is_device_extendable_to(_dev.get(), RS2_EXTENSION_UPDATABLE, &e) == 0 && !e)
             {
                 _dev.reset();
@@ -181,7 +182,7 @@ namespace rs2
         // Move the device to update state, this will cause the updatable device to disconnect and reconnect as an update device.
         void enter_update_state() const
         {
-            rs2_error* e = nullptr;
+            rs2_error *e = nullptr;
             rs2_enter_update_state(_dev.get(), &e);
             error::handle(e);
         }
@@ -192,7 +193,7 @@ namespace rs2
         {
             std::vector<uint8_t> results;
 
-            rs2_error* e = nullptr;
+            rs2_error *e = nullptr;
             std::shared_ptr<const rs2_raw_data_buffer> list(
                 rs2_create_flash_backup_cpp(_dev.get(), nullptr, &e),
                 rs2_delete_raw_data);
@@ -208,12 +209,12 @@ namespace rs2
             return results;
         }
 
-        template<class T>
+        template <class T>
         std::vector<uint8_t> create_flash_backup(T callback) const
         {
             std::vector<uint8_t> results;
 
-            rs2_error* e = nullptr;
+            rs2_error *e = nullptr;
             std::shared_ptr<const rs2_raw_data_buffer> list(
                 rs2_create_flash_backup_cpp(_dev.get(), new update_progress_callback<T>(std::move(callback)), &e),
                 rs2_delete_raw_data);
@@ -230,27 +231,27 @@ namespace rs2
         }
 
         // check firmware compatibility with SKU
-        bool check_firmware_compatibility(const std::vector<uint8_t>& image) const
+        bool check_firmware_compatibility(const std::vector<uint8_t> &image) const
         {
-            rs2_error* e = nullptr;
+            rs2_error *e = nullptr;
             auto res = !!rs2_check_firmware_compatibility(_dev.get(), image.data(), (int)image.size(), &e);
             error::handle(e);
             return res;
         }
 
         // Update an updatable device to the provided unsigned firmware. This call is executed on the caller's thread.
-        void update_unsigned(const std::vector<uint8_t>& image, int update_mode = RS2_UNSIGNED_UPDATE_MODE_UPDATE) const
+        void update_unsigned(const std::vector<uint8_t> &image, int update_mode = RS2_UNSIGNED_UPDATE_MODE_UPDATE) const
         {
-            rs2_error* e = nullptr;
+            rs2_error *e = nullptr;
             rs2_update_firmware_unsigned_cpp(_dev.get(), image.data(), (int)image.size(), nullptr, update_mode, &e);
             error::handle(e);
         }
 
         // Update an updatable device to the provided unsigned firmware. This call is executed on the caller's thread and it supports progress notifications via the callback.
-        template<class T>
-        void update_unsigned(const std::vector<uint8_t>& image, T callback, int update_mode = RS2_UNSIGNED_UPDATE_MODE_UPDATE) const
+        template <class T>
+        void update_unsigned(const std::vector<uint8_t> &image, T callback, int update_mode = RS2_UNSIGNED_UPDATE_MODE_UPDATE) const
         {
-            rs2_error* e = nullptr;
+            rs2_error *e = nullptr;
             rs2_update_firmware_unsigned_cpp(_dev.get(), image.data(), int(image.size()), new update_progress_callback<T>(std::move(callback)), update_mode, &e);
             error::handle(e);
         }
@@ -263,7 +264,7 @@ namespace rs2
         update_device(device d)
             : device(d.get())
         {
-            rs2_error* e = nullptr;
+            rs2_error *e = nullptr;
             if (rs2_is_device_extendable_to(_dev.get(), RS2_EXTENSION_UPDATE_DEVICE, &e) == 0 && !e)
             {
                 _dev.reset();
@@ -273,19 +274,19 @@ namespace rs2
 
         // Update an updatable device to the provided firmware.
         // This call is executed on the caller's thread.
-        void update(const std::vector<uint8_t>& fw_image) const
+        void update(const std::vector<uint8_t> &fw_image) const
         {
-            rs2_error* e = nullptr;
+            rs2_error *e = nullptr;
             rs2_update_firmware_cpp(_dev.get(), fw_image.data(), (int)fw_image.size(), NULL, &e);
             error::handle(e);
         }
 
         // Update an updatable device to the provided firmware.
         // This call is executed on the caller's thread and it supports progress notifications via the callback.
-        template<class T>
-        void update(const std::vector<uint8_t>& fw_image, T callback) const
+        template <class T>
+        void update(const std::vector<uint8_t> &fw_image, T callback) const
         {
-            rs2_error* e = nullptr;
+            rs2_error *e = nullptr;
             rs2_update_firmware_cpp(_dev.get(), fw_image.data(), int(fw_image.size()), new update_progress_callback<T>(std::move(callback)), &e);
             error::handle(e);
         }
@@ -298,24 +299,25 @@ namespace rs2
     public:
         calibrated_device(device d)
             : device(d.get())
-        {}
+        {
+        }
 
         /**
-        * Write calibration that was set by set_calibration_table to device's EEPROM.
-        */
+         * Write calibration that was set by set_calibration_table to device's EEPROM.
+         */
         void write_calibration() const
         {
-            rs2_error* e = nullptr;
+            rs2_error *e = nullptr;
             rs2_write_calibration(_dev.get(), &e);
             error::handle(e);
         }
 
         /**
-        * Reset device to factory calibration
-        */
+         * Reset device to factory calibration
+         */
         void reset_to_factory_calibration()
         {
-            rs2_error* e = nullptr;
+            rs2_error *e = nullptr;
             rs2_reset_to_factory_calibration(_dev.get(), &e);
             error::handle(e);
         }
@@ -327,7 +329,7 @@ namespace rs2
         auto_calibrated_device(device d)
             : calibrated_device(d)
         {
-            rs2_error* e = nullptr;
+            rs2_error *e = nullptr;
             if (rs2_is_device_extendable_to(_dev.get(), RS2_EXTENSION_AUTO_CALIBRATED_DEVICE, &e) == 0 && !e)
             {
                 _dev.reset();
@@ -370,12 +372,12 @@ namespace rs2
          * \param[in] timeout_ms        Timeout in ms
          * \return                      New calibration table
         */
-        template<class T>
-        calibration_table run_on_chip_calibration(std::string json_content, float* health, T callback, int timeout_ms = 5000) const
+        template <class T>
+        calibration_table run_on_chip_calibration(std::string json_content, float *health, T callback, int timeout_ms = 5000) const
         {
             std::vector<uint8_t> results;
 
-            rs2_error* e = nullptr;
+            rs2_error *e = nullptr;
             auto buf = rs2_run_on_chip_calibration_cpp(_dev.get(), json_content.data(), int(json_content.size()), health, new update_progress_callback<T>(std::move(callback)), timeout_ms, &e);
             error::handle(e);
 
@@ -425,12 +427,12 @@ namespace rs2
          * \param[in] timeout_ms        Timeout in ms
          * \return                      New calibration table
          */
-        calibration_table run_on_chip_calibration(std::string json_content, float* health, int timeout_ms = 5000) const
+        calibration_table run_on_chip_calibration(std::string json_content, float *health, int timeout_ms = 5000) const
         {
             std::vector<uint8_t> results;
 
-            rs2_error* e = nullptr;
-            const rs2_raw_data_buffer* buf = rs2_run_on_chip_calibration_cpp(_dev.get(), json_content.data(), static_cast< int >( json_content.size() ), health, nullptr, timeout_ms, &e);
+            rs2_error *e = nullptr;
+            const rs2_raw_data_buffer *buf = rs2_run_on_chip_calibration_cpp(_dev.get(), json_content.data(), static_cast<int>(json_content.size()), health, nullptr, timeout_ms, &e);
             error::handle(e);
             std::shared_ptr<const rs2_raw_data_buffer> list(buf, rs2_delete_raw_data);
 
@@ -476,13 +478,13 @@ namespace rs2
         * \param[in] timeout_ms          Timeout in ms
         * \return                        New calibration table
         */
-        template<class T>
-        calibration_table run_tare_calibration(float ground_truth_mm, std::string json_content, float* health, T callback, int timeout_ms = 5000) const
+        template <class T>
+        calibration_table run_tare_calibration(float ground_truth_mm, std::string json_content, float *health, T callback, int timeout_ms = 5000) const
         {
             std::vector<uint8_t> results;
 
-            rs2_error* e = nullptr;
-            const rs2_raw_data_buffer* buf = rs2_run_tare_calibration_cpp(_dev.get(), ground_truth_mm, json_content.data(), int(json_content.size()), health, new update_progress_callback<T>(std::move(callback)), timeout_ms, &e);
+            rs2_error *e = nullptr;
+            const rs2_raw_data_buffer *buf = rs2_run_tare_calibration_cpp(_dev.get(), ground_truth_mm, json_content.data(), int(json_content.size()), health, new update_progress_callback<T>(std::move(callback)), timeout_ms, &e);
             error::handle(e);
             std::shared_ptr<const rs2_raw_data_buffer> list(buf, rs2_delete_raw_data);
 
@@ -526,12 +528,12 @@ namespace rs2
          * \param[in] timeout_ms          Timeout in ms
          * \return                        New calibration table
          */
-        calibration_table run_tare_calibration(float ground_truth_mm, std::string json_content, float * health, int timeout_ms = 5000) const
+        calibration_table run_tare_calibration(float ground_truth_mm, std::string json_content, float *health, int timeout_ms = 5000) const
         {
             std::vector<uint8_t> results;
 
-            rs2_error* e = nullptr;
-            const rs2_raw_data_buffer* buf = rs2_run_tare_calibration_cpp(_dev.get(), ground_truth_mm, json_content.data(), static_cast< int >( json_content.size() ), health, nullptr, timeout_ms, &e);
+            rs2_error *e = nullptr;
+            const rs2_raw_data_buffer *buf = rs2_run_tare_calibration_cpp(_dev.get(), ground_truth_mm, json_content.data(), static_cast<int>(json_content.size()), health, nullptr, timeout_ms, &e);
             error::handle(e);
             std::shared_ptr<const rs2_raw_data_buffer> list(buf, rs2_delete_raw_data);
 
@@ -546,20 +548,20 @@ namespace rs2
         }
 
         /**
-        * When doing a host-assited calibration (Tare or on-chip) add frame to the calibration process
+         * When doing a host-assited calibration (Tare or on-chip) add frame to the calibration process
          * \param[in] f     The next depth frame.
          * \param[in] callback            Optional callback to get progress notifications
          * \param[in] timeout_ms          Timeout in ms
          * \param[out] health             The health check numbers before and after calibration
-        * \return a New calibration table when process is done. An empty table otherwise - need more frames.
-        **/
-        template<class T>
-        calibration_table process_calibration_frame(rs2::frame f, float* const health, T callback, int timeout_ms = 5000) const
+         * \return a New calibration table when process is done. An empty table otherwise - need more frames.
+         **/
+        template <class T>
+        calibration_table process_calibration_frame(rs2::frame f, float *const health, T callback, int timeout_ms = 5000) const
         {
             std::vector<uint8_t> results;
 
-            rs2_error* e = nullptr;
-            const rs2_raw_data_buffer* buf = rs2_process_calibration_frame(_dev.get(), f.get(), health, new update_progress_callback<T>(std::move(callback)), timeout_ms, &e);
+            rs2_error *e = nullptr;
+            const rs2_raw_data_buffer *buf = rs2_process_calibration_frame(_dev.get(), f.get(), health, new update_progress_callback<T>(std::move(callback)), timeout_ms, &e);
             error::handle(e);
             std::shared_ptr<const rs2_raw_data_buffer> list(buf, rs2_delete_raw_data);
 
@@ -574,18 +576,18 @@ namespace rs2
         }
 
         /**
-        * When doing a host-assited calibration (Tare or on-chip) add frame to the calibration process
+         * When doing a host-assited calibration (Tare or on-chip) add frame to the calibration process
          * \param[in] f     The next depth frame.
          * \param[in] timeout_ms          Timeout in ms
          * \param[out] health             The health check numbers before and after calibration
-        * \return a New calibration table when process is done. An empty table otherwise - need more frames.
-        **/
-        calibration_table process_calibration_frame(rs2::frame f, float* const health, int timeout_ms = 5000) const
+         * \return a New calibration table when process is done. An empty table otherwise - need more frames.
+         **/
+        calibration_table process_calibration_frame(rs2::frame f, float *const health, int timeout_ms = 5000) const
         {
             std::vector<uint8_t> results;
 
-            rs2_error* e = nullptr;
-            const rs2_raw_data_buffer* buf = rs2_process_calibration_frame(_dev.get(), f.get(), health, nullptr, timeout_ms, &e);
+            rs2_error *e = nullptr;
+            const rs2_raw_data_buffer *buf = rs2_process_calibration_frame(_dev.get(), f.get(), health, nullptr, timeout_ms, &e);
             error::handle(e);
             std::shared_ptr<const rs2_raw_data_buffer> list(buf, rs2_delete_raw_data);
 
@@ -600,14 +602,14 @@ namespace rs2
         }
 
         /**
-        *  Read current calibration table from flash.
-        * \return    Calibration table
-        */
+         *  Read current calibration table from flash.
+         * \return    Calibration table
+         */
         calibration_table get_calibration_table()
         {
             std::vector<uint8_t> results;
 
-            rs2_error* e = nullptr;
+            rs2_error *e = nullptr;
             std::shared_ptr<const rs2_raw_data_buffer> list(
                 rs2_get_calibration_table(_dev.get(), &e),
                 rs2_delete_raw_data);
@@ -624,33 +626,33 @@ namespace rs2
         }
 
         /**
-        *  Set current table to dynamic area.
-        * \param[in]     Calibration table
-        */
-        void set_calibration_table(const calibration_table& calibration)
+         *  Set current table to dynamic area.
+         * \param[in]     Calibration table
+         */
+        void set_calibration_table(const calibration_table &calibration)
         {
-            rs2_error* e = nullptr;
-            rs2_set_calibration_table(_dev.get(), calibration.data(), static_cast< int >( calibration.size() ), &e);
+            rs2_error *e = nullptr;
+            rs2_set_calibration_table(_dev.get(), calibration.data(), static_cast<int>(calibration.size()), &e);
             error::handle(e);
         }
 
         /**
-        *  Run target-based focal length calibration for D400 Stereo Cameras
-        * \param[in]    left_queue: container for left IR frames with resoluton of 1280x720 and the target in the center of 320x240 pixels ROI.
-        * \param[in]    right_queue: container for right IR frames with resoluton of 1280x720 and the target in the center of 320x240 pixels ROI
-        * \param[in]    target_w: the rectangle width in mm on the target
-        * \param[in]    target_h: the rectangle height in mm on the target
-        * \param[in]    adjust_both_sides: 1 for adjusting both left and right camera calibration tables and 0 for adjusting right camera calibraion table only
-        * \param[out]   ratio: the corrected ratio from the calibration
-        * \param[out]   angle: the target's tilt angle
-        * \return       New calibration table
-        */
+         *  Run target-based focal length calibration for D400 Stereo Cameras
+         * \param[in]    left_queue: container for left IR frames with resoluton of 1280x720 and the target in the center of 320x240 pixels ROI.
+         * \param[in]    right_queue: container for right IR frames with resoluton of 1280x720 and the target in the center of 320x240 pixels ROI
+         * \param[in]    target_w: the rectangle width in mm on the target
+         * \param[in]    target_h: the rectangle height in mm on the target
+         * \param[in]    adjust_both_sides: 1 for adjusting both left and right camera calibration tables and 0 for adjusting right camera calibraion table only
+         * \param[out]   ratio: the corrected ratio from the calibration
+         * \param[out]   angle: the target's tilt angle
+         * \return       New calibration table
+         */
         std::vector<uint8_t> run_focal_length_calibration(rs2::frame_queue left, rs2::frame_queue right, float target_w, float target_h, int adjust_both_sides,
-            float* ratio, float* angle) const
+                                                          float *ratio, float *angle) const
         {
             std::vector<uint8_t> results;
 
-            rs2_error* e = nullptr;
+            rs2_error *e = nullptr;
             std::shared_ptr<const rs2_raw_data_buffer> list(
                 rs2_run_focal_length_calibration_cpp(_dev.get(), left.get().get(), right.get().get(), target_w, target_h, adjust_both_sides, ratio, angle, nullptr, &e),
                 rs2_delete_raw_data);
@@ -667,26 +669,26 @@ namespace rs2
         }
 
         /**
-        *  Run target-based focal length calibration for D400 Stereo Cameras
-        * \param[in]    left_queue: container for left IR frames with resoluton of 1280x720 and the target in the center of 320x240 pixels ROI.
-        * \param[in]    right_queue: container for right IR frames with resoluton of 1280x720 and the target in the center of 320x240 pixels ROI
-        * \param[in]    target_w: the rectangle width in mm on the target
-        * \param[in]    target_h: the rectangle height in mm on the target
-        * \param[in]    adjust_both_sides: 1 for adjusting both left and right camera calibration tables and 0 for adjusting right camera calibraion table only
-        * \param[out]   ratio: the corrected ratio from the calibration
-        * \param[out]   angle: the target's tilt angle
-        * \return       New calibration table
-        */
-        template<class T>
+         *  Run target-based focal length calibration for D400 Stereo Cameras
+         * \param[in]    left_queue: container for left IR frames with resoluton of 1280x720 and the target in the center of 320x240 pixels ROI.
+         * \param[in]    right_queue: container for right IR frames with resoluton of 1280x720 and the target in the center of 320x240 pixels ROI
+         * \param[in]    target_w: the rectangle width in mm on the target
+         * \param[in]    target_h: the rectangle height in mm on the target
+         * \param[in]    adjust_both_sides: 1 for adjusting both left and right camera calibration tables and 0 for adjusting right camera calibraion table only
+         * \param[out]   ratio: the corrected ratio from the calibration
+         * \param[out]   angle: the target's tilt angle
+         * \return       New calibration table
+         */
+        template <class T>
         std::vector<uint8_t> run_focal_length_calibration(rs2::frame_queue left, rs2::frame_queue right, float target_w, float target_h, int adjust_both_sides,
-            float* ratio, float* angle, T callback) const
+                                                          float *ratio, float *angle, T callback) const
         {
             std::vector<uint8_t> results;
 
-            rs2_error* e = nullptr;
+            rs2_error *e = nullptr;
             std::shared_ptr<const rs2_raw_data_buffer> list(
                 rs2_run_focal_length_calibration_cpp(_dev.get(), left.get().get(), right.get().get(), target_w, target_h, adjust_both_sides, ratio, angle,
-                    new update_progress_callback<T>(std::move(callback)), &e),
+                                                     new update_progress_callback<T>(std::move(callback)), &e),
                 rs2_delete_raw_data);
             error::handle(e);
 
@@ -701,22 +703,22 @@ namespace rs2
         }
 
         /**
-        *  Depth-RGB UV-Map calibration. Applicable for D400 cameras
-        * \param[in]    left: container for left IR frames with resoluton of 1280x720 and the target in the center of 320x240 pixels ROI.
-        * \param[in]    color: container for RGB frames with resoluton of 1280x720 and the target in the center of 320x240 pixels ROI
-        * \param[in]    depth: container for Depth frames with resoluton of 1280x720 and the target in the center of 320x240 pixels ROI
-        * \param[in]    py_px_only: 1 for calibrating color camera py and px only, 1 for calibrating color camera py, px, fy, and fx.
-        * \param[out]   health: The four health check numbers int the oorder of px, py, fx, fy for the calibration
-        * \param[in]    health_size: number of health check numbers, which is 4 by default
-        * \param[in]    callback: Optional callback for update progress notifications, the progress value is normailzed to 1
-        * \return       New calibration table
-        */
+         *  Depth-RGB UV-Map calibration. Applicable for D400 cameras
+         * \param[in]    left: container for left IR frames with resoluton of 1280x720 and the target in the center of 320x240 pixels ROI.
+         * \param[in]    color: container for RGB frames with resoluton of 1280x720 and the target in the center of 320x240 pixels ROI
+         * \param[in]    depth: container for Depth frames with resoluton of 1280x720 and the target in the center of 320x240 pixels ROI
+         * \param[in]    py_px_only: 1 for calibrating color camera py and px only, 1 for calibrating color camera py, px, fy, and fx.
+         * \param[out]   health: The four health check numbers int the oorder of px, py, fx, fy for the calibration
+         * \param[in]    health_size: number of health check numbers, which is 4 by default
+         * \param[in]    callback: Optional callback for update progress notifications, the progress value is normailzed to 1
+         * \return       New calibration table
+         */
         std::vector<uint8_t> run_uv_map_calibration(rs2::frame_queue left, rs2::frame_queue color, rs2::frame_queue depth, int py_px_only,
-            float* health, int health_size) const
+                                                    float *health, int health_size) const
         {
             std::vector<uint8_t> results;
 
-            rs2_error* e = nullptr;
+            rs2_error *e = nullptr;
             std::shared_ptr<const rs2_raw_data_buffer> list(
                 rs2_run_uv_map_calibration_cpp(_dev.get(), left.get().get(), color.get().get(), depth.get().get(), py_px_only, health, health_size, nullptr, &e),
                 rs2_delete_raw_data);
@@ -733,27 +735,27 @@ namespace rs2
         }
 
         /**
-        *  Depth-RGB UV-Map calibration. Applicable for D400 cameras
-        * \param[in]    left: container for left IR frames with resoluton of 1280x720 and the target in the center of 320x240 pixels ROI.
-        * \param[in]    color: container for RGB frames with resoluton of 1280x720 and the target in the center of 320x240 pixels ROI
-        * \param[in]    depth: container for Depth frames with resoluton of 1280x720 and the target in the center of 320x240 pixels ROI
-        * \param[in]    py_px_only: 1 for calibrating color camera py and px only, 1 for calibrating color camera py, px, fy, and fx.
-        * \param[out]   health: The four health check numbers in order of px, py, fx, fy for the calibration
-        * \param[in]    health_size: number of health check numbers, which is 4 by default
-        * \param[in]    callback: Optional callback for update progress notifications, the progress value is normailzed to 1
-        * \param[in]    client_data: Optional client data for the callback
-        * \return       New calibration table
-        */
-        template<class T>
+         *  Depth-RGB UV-Map calibration. Applicable for D400 cameras
+         * \param[in]    left: container for left IR frames with resoluton of 1280x720 and the target in the center of 320x240 pixels ROI.
+         * \param[in]    color: container for RGB frames with resoluton of 1280x720 and the target in the center of 320x240 pixels ROI
+         * \param[in]    depth: container for Depth frames with resoluton of 1280x720 and the target in the center of 320x240 pixels ROI
+         * \param[in]    py_px_only: 1 for calibrating color camera py and px only, 1 for calibrating color camera py, px, fy, and fx.
+         * \param[out]   health: The four health check numbers in order of px, py, fx, fy for the calibration
+         * \param[in]    health_size: number of health check numbers, which is 4 by default
+         * \param[in]    callback: Optional callback for update progress notifications, the progress value is normailzed to 1
+         * \param[in]    client_data: Optional client data for the callback
+         * \return       New calibration table
+         */
+        template <class T>
         std::vector<uint8_t> run_uv_map_calibration(rs2::frame_queue left, rs2::frame_queue color, rs2::frame_queue depth, int py_px_only,
-            float* health, int health_size, T callback) const
+                                                    float *health, int health_size, T callback) const
         {
             std::vector<uint8_t> results;
 
-            rs2_error* e = nullptr;
+            rs2_error *e = nullptr;
             std::shared_ptr<const rs2_raw_data_buffer> list(
                 rs2_run_uv_map_calibration_cpp(_dev.get(), left.get().get(), color.get().get(), depth.get().get(), py_px_only, health, health_size,
-                    new update_progress_callback<T>(std::move(callback)), &e),
+                                               new update_progress_callback<T>(std::move(callback)), &e),
                 rs2_delete_raw_data);
             error::handle(e);
 
@@ -768,40 +770,40 @@ namespace rs2
         }
 
         /**
-        *  Calculate Z for calibration target - distance to the target's plane
-        * \param[in]    queue1-3: Frame queues of raw images used to calculate and extract the distance to a predefined target pattern.
-        * For D400 the indexes 1-3 correspond to Left IR, Right IR and Depth with only the Left IR being used
-        * \param[in]    target_width: expected target's horizontal dimension in mm
-        * \param[in]    target_height: expected target's vertical dimension in mm
-        * \return       Calculated distance (Z) to target in millimeter, return negative number on failure
-        */
+         *  Calculate Z for calibration target - distance to the target's plane
+         * \param[in]    queue1-3: Frame queues of raw images used to calculate and extract the distance to a predefined target pattern.
+         * For D400 the indexes 1-3 correspond to Left IR, Right IR and Depth with only the Left IR being used
+         * \param[in]    target_width: expected target's horizontal dimension in mm
+         * \param[in]    target_height: expected target's vertical dimension in mm
+         * \return       Calculated distance (Z) to target in millimeter, return negative number on failure
+         */
         float calculate_target_z(rs2::frame_queue queue1, rs2::frame_queue queue2, rs2::frame_queue queue3,
-            float target_width, float target_height) const
+                                 float target_width, float target_height) const
         {
-            rs2_error* e = nullptr;
+            rs2_error *e = nullptr;
             float result = rs2_calculate_target_z_cpp(_dev.get(), queue1.get().get(), queue2.get().get(), queue3.get().get(),
-                target_width, target_height, nullptr, &e);
+                                                      target_width, target_height, nullptr, &e);
             error::handle(e);
 
             return result;
         }
 
         /**
-        *  Calculate Z for calibration target - distance to the target's plane
-        * \param[in]    queue1-3: Frame queues of raw images used to calculate and extract the distance to a predefined target pattern.
-        * For D400 the indexes 1-3 correspond to Left IR, Right IR and Depth with only the Left IR being used
-        * \param[in]    target_width: expected target's horizontal dimension in mm
-        * \param[in]    target_height: expected target's vertical dimension in mm
-        * \param[in]    callback: Optional callback for reporting progress status
-        * \return       Calculated distance (Z) to target in millimeter, return negative number on failure
-        */
-        template<class T>
+         *  Calculate Z for calibration target - distance to the target's plane
+         * \param[in]    queue1-3: Frame queues of raw images used to calculate and extract the distance to a predefined target pattern.
+         * For D400 the indexes 1-3 correspond to Left IR, Right IR and Depth with only the Left IR being used
+         * \param[in]    target_width: expected target's horizontal dimension in mm
+         * \param[in]    target_height: expected target's vertical dimension in mm
+         * \param[in]    callback: Optional callback for reporting progress status
+         * \return       Calculated distance (Z) to target in millimeter, return negative number on failure
+         */
+        template <class T>
         float calculate_target_z(rs2::frame_queue queue1, rs2::frame_queue queue2, rs2::frame_queue queue3,
-            float target_width, float target_height, T callback) const
+                                 float target_width, float target_height, T callback) const
         {
-            rs2_error* e = nullptr;
+            rs2_error *e = nullptr;
             float result = rs2_calculate_target_z_cpp(_dev.get(), queue1.get().get(), queue2.get().get(), queue3.get().get(),
-                target_width, target_height, new update_progress_callback<T>(std::move(callback)), &e);
+                                                      target_width, target_height, new update_progress_callback<T>(std::move(callback)), &e);
             error::handle(e);
 
             return result;
@@ -811,17 +813,18 @@ namespace rs2
     /*
         Wrapper around any callback function that is given to calibration_change_callback.
     */
-    template< class callback >
+    template <class callback>
     class calibration_change_callback : public rs2_calibration_change_callback
     {
-        //using callback = std::function< void( rs2_calibration_status ) >;
+        // using callback = std::function< void( rs2_calibration_status ) >;
         callback _callback;
-    public:
-        calibration_change_callback( callback cb ) : _callback( cb ) {}
 
-        void on_calibration_change( rs2_calibration_status status ) noexcept override
+    public:
+        calibration_change_callback(callback cb) : _callback(cb) {}
+
+        void on_calibration_change(rs2_calibration_status status) noexcept override
         {
-            _callback( status );
+            _callback(status);
         }
         void release() override { delete this; }
     };
@@ -833,8 +836,8 @@ namespace rs2
         calibration_change_device(device d)
             : device(d.get())
         {
-            rs2_error* e = nullptr;
-            if( ! rs2_is_device_extendable_to( _dev.get(), RS2_EXTENSION_CALIBRATION_CHANGE_DEVICE, &e )  &&  ! e )
+            rs2_error *e = nullptr;
+            if (!rs2_is_device_extendable_to(_dev.get(), RS2_EXTENSION_CALIBRATION_CHANGE_DEVICE, &e) && !e)
             {
                 _dev.reset();
             }
@@ -849,16 +852,16 @@ namespace rs2
                     ...
                 })
         */
-        template< typename T >
+        template <typename T>
         void register_calibration_change_callback(T callback)
         {
             // We wrap the callback with an interface and pass it to librealsense, who will
             // now manage its lifetime. Rather than deleting it, though, it will call its
             // release() function, where (back in our context) it can be safely deleted:
-            rs2_error* e = nullptr;
+            rs2_error *e = nullptr;
             rs2_register_calibration_change_callback_cpp(
                 _dev.get(),
-                new calibration_change_callback< T >(std::move(callback)),
+                new calibration_change_callback<T>(std::move(callback)),
                 &e);
             error::handle(e);
         }
@@ -868,24 +871,24 @@ namespace rs2
     {
     public:
         device_calibration() = default;
-        device_calibration( device d )
+        device_calibration(device d)
         {
-            rs2_error* e = nullptr;
-            if( rs2_is_device_extendable_to( d.get().get(), RS2_EXTENSION_DEVICE_CALIBRATION, &e ))
+            rs2_error *e = nullptr;
+            if (rs2_is_device_extendable_to(d.get().get(), RS2_EXTENSION_DEVICE_CALIBRATION, &e))
             {
                 _dev = d.get();
             }
-            error::handle( e );
+            error::handle(e);
         }
 
         /**
-        * This will trigger the given calibration, if available
-        */
-        void trigger_device_calibration( rs2_calibration_type type )
+         * This will trigger the given calibration, if available
+         */
+        void trigger_device_calibration(rs2_calibration_type type)
         {
-            rs2_error* e = nullptr;
-            rs2_trigger_device_calibration( _dev.get(), type, &e );
-            error::handle( e );
+            rs2_error *e = nullptr;
+            rs2_trigger_device_calibration(_dev.get(), type, &e);
+            error::handle(e);
         }
     };
 
@@ -893,10 +896,10 @@ namespace rs2
     {
     public:
         debug_protocol(device d)
-                : device(d.get())
+            : device(d.get())
         {
-            rs2_error* e = nullptr;
-            if(rs2_is_device_extendable_to(_dev.get(), RS2_EXTENSION_DEBUG, &e) == 0 && !e)
+            rs2_error *e = nullptr;
+            if (rs2_is_device_extendable_to(_dev.get(), RS2_EXTENSION_DEBUG, &e) == 0 && !e)
             {
                 _dev.reset();
             }
@@ -904,17 +907,17 @@ namespace rs2
         }
 
         std::vector<uint8_t> build_command(uint32_t opcode,
-            uint32_t param1 = 0,
-            uint32_t param2 = 0,
-            uint32_t param3 = 0,
-            uint32_t param4 = 0,
-            std::vector<uint8_t> const & data = {}) const
+                                           uint32_t param1 = 0,
+                                           uint32_t param2 = 0,
+                                           uint32_t param3 = 0,
+                                           uint32_t param4 = 0,
+                                           std::vector<uint8_t> const &data = {}) const
         {
             std::vector<uint8_t> results;
 
-            rs2_error* e = nullptr;
+            rs2_error *e = nullptr;
             auto buffer = rs2_build_debug_protocol_command(_dev.get(), opcode, param1, param2, param3, param4,
-                (void*)data.data(), (uint32_t)data.size(), &e);
+                                                           (void *)data.data(), (uint32_t)data.size(), &e);
             std::shared_ptr<const rs2_raw_data_buffer> list(buffer, rs2_delete_raw_data);
             error::handle(e);
 
@@ -929,14 +932,14 @@ namespace rs2
             return results;
         }
 
-        std::vector<uint8_t> send_and_receive_raw_data(const std::vector<uint8_t>& input) const
+        std::vector<uint8_t> send_and_receive_raw_data(const std::vector<uint8_t> &input) const
         {
             std::vector<uint8_t> results;
 
-            rs2_error* e = nullptr;
+            rs2_error *e = nullptr;
             std::shared_ptr<const rs2_raw_data_buffer> list(
-                    rs2_send_and_receive_raw_data(_dev.get(), (void*)input.data(), (uint32_t)input.size(), &e),
-                    rs2_delete_raw_data);
+                rs2_send_and_receive_raw_data(_dev.get(), (void *)input.data(), (uint32_t)input.size(), &e),
+                rs2_delete_raw_data);
             error::handle(e);
 
             auto size = rs2_get_raw_data_size(list.get(), &e);
@@ -963,19 +966,20 @@ namespace rs2
         operator std::vector<device>() const
         {
             std::vector<device> res;
-            for (auto&& dev : *this) res.push_back(dev);
+            for (auto &&dev : *this)
+                res.push_back(dev);
             return res;
         }
 
-        bool contains(const device& dev) const
+        bool contains(const device &dev) const
         {
-            rs2_error* e = nullptr;
+            rs2_error *e = nullptr;
             auto res = !!(rs2_device_list_contains(_list.get(), dev.get().get(), &e));
             error::handle(e);
             return res;
         }
 
-        device_list& operator=(std::shared_ptr<rs2_device_list> list)
+        device_list &operator=(std::shared_ptr<rs2_device_list> list)
         {
             _list = std::move(list);
             return *this;
@@ -983,7 +987,7 @@ namespace rs2
 
         device operator[](uint32_t index) const
         {
-            rs2_error* e = nullptr;
+            rs2_error *e = nullptr;
             std::shared_ptr<rs2_device> dev(
                 rs2_create_device(_list.get(), index, &e),
                 rs2_delete_device);
@@ -994,7 +998,7 @@ namespace rs2
 
         uint32_t size() const
         {
-            rs2_error* e = nullptr;
+            rs2_error *e = nullptr;
             auto size = rs2_get_device_count(_list.get(), &e);
             error::handle(e);
             return size;
@@ -1009,7 +1013,7 @@ namespace rs2
         class device_list_iterator
         {
             device_list_iterator(
-                const device_list& device_list,
+                const device_list &device_list,
                 uint32_t uint32_t)
                 : _list(device_list),
                   _index(uint32_t)
@@ -1021,22 +1025,23 @@ namespace rs2
             {
                 return _list[_index];
             }
-            bool operator!=(const device_list_iterator& other) const
+            bool operator!=(const device_list_iterator &other) const
             {
                 return other._index != _index || &other._list != &_list;
             }
-            bool operator==(const device_list_iterator& other) const
+            bool operator==(const device_list_iterator &other) const
             {
                 return !(*this != other);
             }
-            device_list_iterator& operator++()
+            device_list_iterator &operator++()
             {
                 _index++;
                 return *this;
             }
+
         private:
             friend device_list;
-            const device_list& _list;
+            const device_list &_list;
             uint32_t _index;
         };
 
@@ -1048,7 +1053,7 @@ namespace rs2
         {
             return device_list_iterator(*this, size());
         }
-        const rs2_device_list* get_list() const
+        const rs2_device_list *get_list() const
         {
             return _list.get();
         }

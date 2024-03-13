@@ -1,5 +1,8 @@
 /* License: Apache 2.0. See LICENSE file in root directory. */
 /* Copyright(c) 2019 Intel Corporation. All Rights Reserved. */
+
+// keep this file for syntex "pipeline"
+
 #pragma once
 
 #include <librealsense2/rs.hpp>
@@ -23,8 +26,7 @@ namespace rs2
 
         struct sample
         {
-            sample(std::vector<single_metric_data> samples, double timestamp, unsigned long long frame_number) :
-                samples(std::move(samples)), timestamp(timestamp), frame_number(frame_number) {}
+            sample(std::vector<single_metric_data> samples, double timestamp, unsigned long long frame_number) : samples(std::move(samples)), timestamp(timestamp), frame_number(frame_number) {}
 
             std::vector<single_metric_data> samples;
 
@@ -41,17 +43,17 @@ namespace rs2
         class metrics_recorder
         {
         public:
-            metrics_recorder(viewer_model& viewer_model) :
-                _recording(false), _viewer_model(viewer_model)
-            {}
+            metrics_recorder(viewer_model &viewer_model) : _recording(false), _viewer_model(viewer_model)
+            {
+            }
 
-            void add_metric(const metric_definition& data)
+            void add_metric(const metric_definition &data)
             {
                 std::lock_guard<std::mutex> lock(_m);
                 _metric_data.push_back(data);
             }
 
-            void add_sample(rs2::frameset& frames, std::vector<single_metric_data> sample)
+            void add_sample(rs2::frameset &frames, std::vector<single_metric_data> sample)
             {
                 std::lock_guard<std::mutex> lock(_m);
                 if (_recording)
@@ -59,10 +61,10 @@ namespace rs2
                     record_frames(frames);
 
                     if (sample.size())
-                        _samples.push_back({ sample, _model_timer.get_elapsed_ms(), frames.get_frame_number() });
+                        _samples.push_back({sample, _model_timer.get_elapsed_ms(), frames.get_frame_number()});
                 }
             }
-            void start_record(metrics_model* metrics)
+            void start_record(metrics_model *metrics)
             {
                 std::lock_guard<std::mutex> lock(_m);
                 _metrics = metrics;
@@ -73,7 +75,7 @@ namespace rs2
                 }
             }
 
-            void stop_record(device_model* dev)
+            void stop_record(device_model *dev)
             {
                 std::lock_guard<std::mutex> lock(_m);
                 _recording = false;
@@ -92,17 +94,17 @@ namespace rs2
                         catch (...)
                         {
                             _viewer_model.not_model->add_notification(
-                                notification_data{ "Metrics Recording: JSON Serializaion has failed",
-                                                   RS2_LOG_SEVERITY_WARN,
-                                                   RS2_NOTIFICATION_CATEGORY_UNKNOWN_ERROR } );
+                                notification_data{"Metrics Recording: JSON Serializaion has failed",
+                                                  RS2_LOG_SEVERITY_WARN,
+                                                  RS2_NOTIFICATION_CATEGORY_UNKNOWN_ERROR});
                         }
                     }
                 }
                 _samples.clear();
                 _viewer_model.not_model->add_notification(
-                    notification_data{ "Finished to record frames and matrics data ",
-                                       RS2_LOG_SEVERITY_INFO,
-                                       RS2_NOTIFICATION_CATEGORY_UNKNOWN_ERROR } );
+                    notification_data{"Finished to record frames and matrics data ",
+                                      RS2_LOG_SEVERITY_INFO,
+                                      RS2_NOTIFICATION_CATEGORY_UNKNOWN_ERROR});
             }
 
             bool is_recording()
@@ -112,15 +114,15 @@ namespace rs2
 
         private:
             void serialize_to_csv() const;
-            void record_frames(const frameset & frame);
-            viewer_model& _viewer_model;
+            void record_frames(const frameset &frame);
+            viewer_model &_viewer_model;
             std::vector<metric_definition> _metric_data;
             std::vector<sample> _samples;
             rsutils::time::stopwatch _model_timer;
             std::mutex _m;
             bool _recording;
             std::string _filename_base;
-            metrics_model* _metrics;
+            metrics_model *_metrics;
             colorizer _colorize;
             pointcloud _pc;
         };
@@ -153,33 +155,34 @@ namespace rs2
                 return MAX_RANGE;
             }
 
-            metric_plot(const std::string& name, float min, float max,
-                        const std::string& units, const std::string& description,
+            metric_plot(const std::string &name, float min, float max,
+                        const std::string &units, const std::string &description,
                         const bool with_plane_fit)
-                : _idx(0), _first_idx(0),_vals(), _min(min), _max(max), _id("##" + name),
-                _label(name + " = "), _name(name),
-                _units(units), _description(description),
-                _enabled(true),
-                _requires_plane_fit(with_plane_fit),
-                _trending_up(std::chrono::milliseconds(700)),
-                _trending_down(std::chrono::milliseconds(700)),
-                _persistent_visibility(std::chrono::milliseconds(2000)) // The metric's status will be absorbed to make the UI persistent
+                : _idx(0), _first_idx(0), _vals(), _min(min), _max(max), _id("##" + name),
+                  _label(name + " = "), _name(name),
+                  _units(units), _description(description),
+                  _enabled(true),
+                  _requires_plane_fit(with_plane_fit),
+                  _trending_up(std::chrono::milliseconds(700)),
+                  _trending_down(std::chrono::milliseconds(700)),
+                  _persistent_visibility(std::chrono::milliseconds(2000)) // The metric's status will be absorbed to make the UI persistent
             {
-                for (int i = 0; i < MAX_RANGE; i++) ranges[i] = { 0.f, 0.f };
+                for (int i = 0; i < MAX_RANGE; i++)
+                    ranges[i] = {0.f, 0.f};
             }
             ~metric_plot() {}
 
             void add_value(float val)
             {
                 std::lock_guard<std::mutex> lock(_m);
-                _vals[_idx]         = val;
-                _timestamps[_idx]   = _model_timer.get_elapsed_ms();
+                _vals[_idx] = val;
+                _timestamps[_idx] = _model_timer.get_elapsed_ms();
                 _idx = (_idx + 1) % SIZE;
-                if (_first_idx== _idx)
+                if (_first_idx == _idx)
                     _first_idx = (_first_idx + 1) % SIZE;
             }
 
-            void render(ux_window& win);
+            void render(ux_window &win);
 
             void visible(bool is_visible)
             {
@@ -217,7 +220,7 @@ namespace rs2
             rsutils::time::stopwatch _model_timer;
             temporal_event _trending_up;
             temporal_event _trending_down;
-            temporal_event _persistent_visibility;  // Control the metric visualization
+            temporal_event _persistent_visibility; // Control the metric visualization
 
             float2 ranges[MAX_RANGE];
 
@@ -227,10 +230,10 @@ namespace rs2
         class metrics_model
         {
         public:
-            metrics_model(viewer_model& viewer_model);
+            metrics_model(viewer_model &viewer_model);
             ~metrics_model();
 
-            void render(ux_window& win);
+            void render(ux_window &win);
 
             std::array<float3, 4> get_plane()
             {
@@ -246,7 +249,7 @@ namespace rs2
                 _stereo_baseline_mm = baseline;
             };
 
-            void update_roi_attributes(const region_of_interest& roi, float roi_percent)
+            void update_roi_attributes(const region_of_interest &roi, float roi_percent)
             {
                 std::lock_guard<std::mutex> lock(_m);
                 _roi = roi;
@@ -282,7 +285,7 @@ namespace rs2
             {
                 std::lock_guard<std::mutex> lock(_m);
                 _plane_fit = found;
-                for (auto&& plot : _plots)
+                for (auto &&plot : _plots)
                 {
                     if (plot->enabled())
                     {
@@ -308,10 +311,11 @@ namespace rs2
             {
                 _plane_fit = false;
                 rs2::frame f;
-                while (_frame_queue.poll_for_frame(&f));
+                while (_frame_queue.poll_for_frame(&f))
+                    ;
             }
 
-            void update_device_data(const std::string& camera_info)
+            void update_device_data(const std::string &camera_info)
             {
                 _camera_info = camera_info;
             }
@@ -323,33 +327,34 @@ namespace rs2
             {
                 _recorder.start_record(this);
             }
-            void stop_record(device_model* dev)
+            void stop_record(device_model *dev)
             {
                 _recorder.stop_record(dev);
             }
+
         private:
-            metrics_model(const metrics_model&);
+            metrics_model(const metrics_model &);
 
-            frame_queue             _frame_queue;
-            std::thread             _worker_thread;
+            frame_queue _frame_queue;
+            std::thread _worker_thread;
 
-            rs2_intrinsics          _depth_intrinsic;
-            float                   _depth_scale_units;
-            float                   _stereo_baseline_mm;
-            int                     _ground_truth_mm;
-            bool                    _use_gt;
-            bool                    _plane_fit;
-            region_of_interest      _roi;
-            float                   _roi_percentage;
-            snapshot_metrics        _latest_metrics;
-            bool                    _active;
+            rs2_intrinsics _depth_intrinsic;
+            float _depth_scale_units;
+            float _stereo_baseline_mm;
+            int _ground_truth_mm;
+            bool _use_gt;
+            bool _plane_fit;
+            region_of_interest _roi;
+            float _roi_percentage;
+            snapshot_metrics _latest_metrics;
+            bool _active;
             std::vector<std::shared_ptr<metric_plot>> _plots;
             metrics_recorder _recorder;
-            std::string  _camera_info;
-            mutable std::mutex      _m;
+            std::string _camera_info;
+            mutable std::mutex _m;
 
-            friend class  metrics_recorder;
-            friend class  tool_model;
+            friend class metrics_recorder;
+            friend class tool_model;
         };
 
         using metric = std::shared_ptr<metric_plot>;
@@ -357,24 +362,24 @@ namespace rs2
         class tool_model
         {
         public:
-            tool_model(rs2::context& ctx);
+            tool_model(rs2::context &ctx);
 
-            bool start(ux_window& win);
+            bool start(ux_window &win);
 
-            void render(ux_window& win);
+            void render(ux_window &win);
 
             void update_configuration();
 
-            void reset(ux_window& win);
+            void reset(ux_window &win);
 
-            bool draw_instructions(ux_window& win, const rect& viewer_rect, bool& distance, bool& orientation);
+            bool draw_instructions(ux_window &win, const rect &viewer_rect, bool &distance, bool &orientation);
 
-            void draw_guides(ux_window& win, const rect& viewer_rect, bool distance_guide, bool orientation_guide);
+            void draw_guides(ux_window &win, const rect &viewer_rect, bool distance_guide, bool orientation_guide);
 
             std::shared_ptr<metric_plot> make_metric(
-                const std::string& name, float min, float max, bool plane_fit,
-                const std::string& units,
-                const std::string& description);
+                const std::string &name, float min, float max, bool plane_fit,
+                const std::string &units,
+                const std::string &description);
 
             void on_frame(callback_type callback) { _metrics_model.callback = callback; }
 
@@ -382,40 +387,39 @@ namespace rs2
             rs2::device get_active_device(void) const;
 
         private:
-
             std::string capture_description();
 
-            rs2::context&                   _ctx;
-            pipeline                        _pipe;
-            std::shared_ptr<device_model>   _device_model;
-            viewer_model                    _viewer_model;
-            rs2::points                     _last_points;
-            texture_buffer*                  _last_texture;
+            rs2::context &_ctx;
+            pipeline _pipe;
+            std::shared_ptr<device_model> _device_model;
+            viewer_model _viewer_model;
+            rs2::points _last_points;
+            texture_buffer *_last_texture;
             std::shared_ptr<subdevice_model> _depth_sensor_model;
-            metrics_model                   _metrics_model;
-            std::string                     _error_message;
-            bool                            _first_frame = true;
-            rsutils::time::periodic_timer  _update_readonly_options_timer;
-            bool                            _device_in_use = false;
+            metrics_model _metrics_model;
+            std::string _error_message;
+            bool _first_frame = true;
+            rsutils::time::periodic_timer _update_readonly_options_timer;
+            bool _device_in_use = false;
 
-            float                           _roi_percent = 0.4f;
-            int                             _roi_combo_index = 2;
-            temporal_event                  _roi_located;
+            float _roi_percent = 0.4f;
+            int _roi_combo_index = 2;
+            temporal_event _roi_located;
 
-            temporal_event                  _too_far;
-            temporal_event                  _too_close;
-            temporal_event                  _skew_left;
-            temporal_event                  _skew_right;
-            temporal_event                  _skew_up;
-            temporal_event                  _skew_down;
-            temporal_event                  _angle_alert;
-            std::map<int, temporal_event>   _depth_scale_events;
+            temporal_event _too_far;
+            temporal_event _too_close;
+            temporal_event _skew_left;
+            temporal_event _skew_right;
+            temporal_event _skew_up;
+            temporal_event _skew_down;
+            temporal_event _angle_alert;
+            std::map<int, temporal_event> _depth_scale_events;
 
-            float                           _min_dist, _max_dist, _max_angle;
-            std::mutex                      _mutex;
+            float _min_dist, _max_dist, _max_angle;
+            std::mutex _mutex;
 
-            bool                            _use_ground_truth = false;
-            int                             _ground_truth = 0;
+            bool _use_ground_truth = false;
+            int _ground_truth = 0;
         };
     }
 }
