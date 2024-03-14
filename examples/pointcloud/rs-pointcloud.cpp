@@ -5,7 +5,7 @@
 #include "example.hpp"          // Include short list of convenience functions for rendering
 
 #include <algorithm> // std::min, std::max
-
+// ? book mark
 // Helper functions
 void register_glfw_callbacks(window &app, glfw_state &app_state);
 
