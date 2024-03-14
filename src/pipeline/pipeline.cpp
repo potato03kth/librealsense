@@ -160,7 +160,8 @@ namespace librealsense
                 }
                 catch (...)
                 {
-                } // Stop will throw if device was disconnected. TODO - refactoring anticipated
+                } // Stop will throw if device was disconnected.
+                // TODO - refactoring anticipated
                 // ! 와... 이새끼들 레전드인게, 5년전에 마지막 커밋이 올라온 대기업 리포가 아직도 TODO가 그대로 남아있네?
                 // ! 그리고 실제로 catch문 대책없이 비워져있는거 실화냐?
 
