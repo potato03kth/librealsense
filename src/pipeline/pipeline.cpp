@@ -210,6 +210,8 @@ namespace librealsense
             return _streams_to_sync_ids;
         }
 
+        // ? book marker
+
         frame_callback_ptr pipeline::get_callback(std::vector<int> synced_streams_ids)
         {
             auto pipeline_process_callback = [&](frame_holder fref)
