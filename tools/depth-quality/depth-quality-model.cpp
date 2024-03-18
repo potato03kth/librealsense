@@ -155,6 +155,7 @@ namespace rs2
             if (second_line != "")
             {
                 auto pos = ImGui::GetCursorPos();
+                // * 제가 왜 10을 뺐냐면요... 가 없네?
                 ImGui::SetCursorPosY(pos.y - 10);
             }
             ImGui::PushFont(win.get_large_font());

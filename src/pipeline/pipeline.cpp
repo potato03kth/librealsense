@@ -12,7 +12,7 @@
 
 // here is the momentum that every fucking things start.
 // declare the librealsense namespace, and pipeline too.
-// let's pick it up one to one.
+// TODO let's pick it up one to one.
 namespace librealsense
 {
     namespace pipeline
