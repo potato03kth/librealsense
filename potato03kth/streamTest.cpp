@@ -39,9 +39,11 @@ catch (const rs2::error &e)
 {
     std::cerr << '\n'
               << "-----"
+              << '\n'
               << "error at RealSense!" << e.what()
               << '\n'
-              << "-----";
+              << "-----"
+              << '\n';
     return EXIT_FAILURE; // this value declared by compiler
 }
 catch (const std::exception &e)
