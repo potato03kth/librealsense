@@ -34,6 +34,7 @@ try
         // TODO we need to convert this to OpenCV format
         app.show(d);
     }
+    return EXIT_SUCCESS;
 }
 catch (const rs2::error &e)
 {
