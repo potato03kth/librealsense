@@ -3,11 +3,11 @@
 
 #pragma once
 
-#include <librealsense2/rs.hpp> // Include RealSense Cross Platform API
+#include "../include/librealsense2/rs.hpp" // Include RealSense Cross Platform API
 
 #define GL_SILENCE_DEPRECATION
 #define GLFW_INCLUDE_GLU
-#include <GLFW/glfw3.h>
+#include "../third-party/glfw/include/GLFW/glfw3.h"
 
 #include <string>
 #include <sstream>
@@ -22,27 +22,33 @@
 #include "example-utils.hpp"
 
 #ifndef PI
-#define PI  3.14159265358979323846
-#define PI_FL  3.141592f
+#define PI 3.14159265358979323846
+#define PI_FL 3.141592f
 #endif
 const float IMU_FRAME_WIDTH = 1280.f;
 const float IMU_FRAME_HEIGHT = 720.f;
-enum class Priority { high = 0, medium = -1, low = -2 };
+enum class Priority
+{
+    high = 0,
+    medium = -1,
+    low = -2
+};
 
 //////////////////////////////
 // Basic Data Types         //
 //////////////////////////////
 
-struct float3 {
+struct float3
+{
     float x, y, z;
     float3 operator*(float t)
     {
-        return { x * t, y * t, z * t };
+        return {x * t, y * t, z * t};
     }
 
     float3 operator-(float t)
     {
-        return { x - t, y - t, z - t };
+        return {x - t, y - t, z - t};
     }
 
     void operator*=(float t)
@@ -66,7 +72,10 @@ struct float3 {
         z += t3;
     }
 };
-struct float2 { float x, y; };
+struct float2
+{
+    float x, y;
+};
 struct frame_pixel
 {
     int frame_idx;
@@ -89,48 +98,44 @@ struct rect
             H *= scale;
         }
 
-        return{ x + (w - W) / 2, y + (h - H) / 2, W, H };
+        return {x + (w - W) / 2, y + (h - H) / 2, W, H};
     }
 };
 
 struct tile_properties
 {
-   
-    unsigned int x, y; //location of tile in the grid
-    unsigned int w, h; //width and height by number of tiles
-    Priority priority; //when should the tile be drawn?: high priority is on top of all, medium is a layer under top layer, low is a layer under medium layer
 
+    unsigned int x, y; // location of tile in the grid
+    unsigned int w, h; // width and height by number of tiles
+    Priority priority; // when should the tile be drawn?: high priority is on top of all, medium is a layer under top layer, low is a layer under medium layer
 };
 
-//name aliasing the map of pairs<frame, tile_properties>
+// name aliasing the map of pairs<frame, tile_properties>
 using frame_and_tile_property = std::pair<rs2::frame, tile_properties>;
 using frames_mosaic = std::map<int, frame_and_tile_property>;
-
 
 //////////////////////////////
 // Simple font loading code //
 //////////////////////////////
 
-
-inline void draw_text(int x, int y, const char* text)
+inline void draw_text(int x, int y, const char *text)
 {
     std::vector<char> buffer;
     buffer.resize(60000); // ~300 chars
     glEnableClientState(GL_VERTEX_ARRAY);
-    glVertexPointer(2, GL_FLOAT, 16, &(buffer[0]) );
-    glDrawArrays( GL_QUADS,
-                  0,
-                  4
-                      * stb_easy_font_print( (float)x,
-                                             (float)( y - 7 ),
-                                             (char *)text,
-                                             nullptr,
-                                             &( buffer[0] ),
-                                             int( sizeof( char ) * buffer.size() ) ) );
+    glVertexPointer(2, GL_FLOAT, 16, &(buffer[0]));
+    glDrawArrays(GL_QUADS,
+                 0,
+                 4 * stb_easy_font_print((float)x,
+                                         (float)(y - 7),
+                                         (char *)text,
+                                         nullptr,
+                                         &(buffer[0]),
+                                         int(sizeof(char) * buffer.size())));
     glDisableClientState(GL_VERTEX_ARRAY);
 }
 
-void set_viewport(const rect& r)
+void set_viewport(const rect &r)
 {
     glViewport((int)r.x, (int)r.y, (int)r.w, (int)r.h);
     glLoadIdentity();
@@ -141,9 +146,9 @@ void set_viewport(const rect& r)
 class imu_renderer
 {
 public:
-    void render(const rs2::motion_frame& frame, const rect& r)
+    void render(const rs2::motion_frame &frame, const rect &r)
     {
-        draw_motion(frame, r.adjust_ratio({ IMU_FRAME_WIDTH, IMU_FRAME_HEIGHT }));
+        draw_motion(frame, r.adjust_ratio({IMU_FRAME_WIDTH, IMU_FRAME_HEIGHT}));
     }
 
     GLuint get_gl_handle() { return _gl_handle; }
@@ -151,7 +156,7 @@ public:
 private:
     GLuint _gl_handle = 0;
 
-    void draw_motion(const rs2::motion_frame& f, const rect& r)
+    void draw_motion(const rs2::motion_frame &f, const rect &r)
     {
         if (!_gl_handle)
             glGenTextures(1, &_gl_handle);
@@ -241,8 +246,8 @@ private:
         glPopMatrix();
     }
 
-    //IMU drawing helper functions
-    void multiply_vector_by_matrix(GLfloat vec[], GLfloat mat[], GLfloat* result)
+    // IMU drawing helper functions
+    void multiply_vector_by_matrix(GLfloat vec[], GLfloat mat[], GLfloat *result)
     {
         const auto N = 4;
         for (int i = 0; i < N; i++)
@@ -258,7 +263,7 @@ private:
 
     float2 xyz_to_xy(float x, float y, float z, GLfloat model[], GLfloat proj[], float vec_norm)
     {
-        GLfloat vec[4] = { x, y, z, 0 };
+        GLfloat vec[4] = {x, y, z, 0};
         float tmp_result[4];
         float result[4];
 
@@ -267,18 +272,18 @@ private:
         multiply_vector_by_matrix(vec, model, tmp_result);
         multiply_vector_by_matrix(tmp_result, proj, result);
 
-        return{ canvas_size * vec_norm * result[0], canvas_size * vec_norm * result[1] };
+        return {canvas_size * vec_norm * result[0], canvas_size * vec_norm * result[1]};
     }
 
-    void print_text_in_3d(float x, float y, float z, const char* text, bool center_text, GLfloat model[], GLfloat proj[], float vec_norm)
+    void print_text_in_3d(float x, float y, float z, const char *text, bool center_text, GLfloat model[], GLfloat proj[], float vec_norm)
     {
         auto xy = xyz_to_xy(x, y, z, model, proj, vec_norm);
-        auto w = (center_text) ? stb_easy_font_width((char*)text) : 0;
+        auto w = (center_text) ? stb_easy_font_width((char *)text) : 0;
         glColor3f(1.0f, 1.0f, 1.0f);
         draw_text((int)(xy.x - w / 2), (int)xy.y, text);
     }
 
-    static void  draw_axes(float axis_size = 1.f, float axisWidth = 4.f)
+    static void draw_axes(float axis_size = 1.f, float axisWidth = 4.f)
     {
         // Triangles For X axis
         glBegin(GL_TRIANGLES);
@@ -335,7 +340,7 @@ private:
     }
 
     // intensity is grey intensity
-    static void draw_circle(float xx, float xy, float xz, float yx, float yy, float yz, float radius = 1.1, float3 center = { 0.0, 0.0, 0.0 }, float intensity = 0.5f)
+    static void draw_circle(float xx, float xy, float xz, float yx, float yy, float yz, float radius = 1.1, float3 center = {0.0, 0.0, 0.0}, float intensity = 0.5f)
     {
         const auto N = 50;
         glColor3f(intensity, intensity, intensity);
@@ -350,20 +355,18 @@ private:
             glVertex3f(
                 center.x + radius * (xx * cost + yx * sint),
                 center.y + radius * (xy * cost + yy * sint),
-                center.z + radius * (xz * cost + yz * sint)
-            );
+                center.z + radius * (xz * cost + yz * sint));
         }
         glEnd();
     }
-
 };
 
 class pose_renderer
 {
 public:
-    void render(const rs2::pose_frame& frame, const rect& r)
+    void render(const rs2::pose_frame &frame, const rect &r)
     {
-        draw_pose(frame, r.adjust_ratio({ IMU_FRAME_WIDTH, IMU_FRAME_HEIGHT }));
+        draw_pose(frame, r.adjust_ratio({IMU_FRAME_WIDTH, IMU_FRAME_HEIGHT}));
     }
 
     GLuint get_gl_handle() { return _gl_handle; }
@@ -372,7 +375,7 @@ private:
     mutable GLuint _gl_handle = 0;
 
     // Provide textual representation only
-    void draw_pose(const rs2::pose_frame& f, const rect& r)
+    void draw_pose(const rs2::pose_frame &f, const rect &r)
     {
         if (!_gl_handle)
             glGenTextures(1, &_gl_handle);
@@ -387,13 +390,16 @@ private:
         std::stringstream ss;
         ss << "Pos (meter): \t\t" << std::fixed << std::setprecision(2) << pose.translation.x << ", " << pose.translation.y << ", " << pose.translation.z;
         draw_text(int(0.05f * r.w), int(0.2f * r.h), ss.str().c_str());
-        ss.clear(); ss.str("");
+        ss.clear();
+        ss.str("");
         ss << "Orient (quaternion): \t" << pose.rotation.x << ", " << pose.rotation.y << ", " << pose.rotation.z << ", " << pose.rotation.w;
         draw_text(int(0.05f * r.w), int(0.3f * r.h), ss.str().c_str());
-        ss.clear(); ss.str("");
+        ss.clear();
+        ss.str("");
         ss << "Lin Velocity (m/sec): \t" << pose.velocity.x << ", " << pose.velocity.y << ", " << pose.velocity.z;
         draw_text(int(0.05f * r.w), int(0.4f * r.h), ss.str().c_str());
-        ss.clear(); ss.str("");
+        ss.clear();
+        ss.str("");
         ss << "Ang. Velocity (rad/sec): \t" << pose.angular_velocity.x << ", " << pose.angular_velocity.y << ", " << pose.angular_velocity.z;
         draw_text(int(0.05f * r.w), int(0.5f * r.h), ss.str().c_str());
     }
@@ -403,7 +409,7 @@ private:
 struct text_renderer
 {
     // Provide textual representation only
-    void put_text(const std::string& msg, float norm_x_pos, float norm_y_pos, const rect& r)
+    void put_text(const std::string &msg, float norm_x_pos, float norm_y_pos, const rect &r)
     {
         set_viewport(r);
         draw_text(int(norm_x_pos * r.w), int(norm_y_pos * r.h), msg.c_str());
@@ -417,10 +423,10 @@ struct text_renderer
 class texture
 {
 public:
-
-    void upload(const rs2::video_frame& frame)
+    void upload(const rs2::video_frame &frame)
     {
-        if (!frame) return;
+        if (!frame)
+            return;
 
         if (!_gl_handle)
             glGenTextures(1, &_gl_handle);
@@ -460,7 +466,7 @@ public:
         glBindTexture(GL_TEXTURE_2D, 0);
     }
 
-    void show(const rect& r, float alpha = 1.f) const
+    void show(const rect &r, float alpha = 1.f) const
     {
         if (!_gl_handle)
             return;
@@ -471,10 +477,14 @@ public:
         glColor4f(1.0f, 1.0f, 1.0f, alpha);
         glEnable(GL_TEXTURE_2D);
         glBegin(GL_QUADS);
-        glTexCoord2f(0, 0); glVertex2f(0, 0);
-        glTexCoord2f(0, 1); glVertex2f(0, r.h);
-        glTexCoord2f(1, 1); glVertex2f(r.w, r.h);
-        glTexCoord2f(1, 0); glVertex2f(r.w, 0);
+        glTexCoord2f(0, 0);
+        glVertex2f(0, 0);
+        glTexCoord2f(0, 1);
+        glVertex2f(0, r.h);
+        glTexCoord2f(1, 1);
+        glVertex2f(r.w, r.h);
+        glTexCoord2f(1, 0);
+        glVertex2f(r.w, 0);
         glEnd();
         glDisable(GL_TEXTURE_2D);
         glBindTexture(GL_TEXTURE_2D, 0);
@@ -483,42 +493,42 @@ public:
 
     GLuint get_gl_handle() { return _gl_handle; }
 
-    void render(const rs2::frame& frame, const rect& rect, float alpha = 1.f)
+    void render(const rs2::frame &frame, const rect &rect, float alpha = 1.f)
     {
         if (auto vf = frame.as<rs2::video_frame>())
         {
             upload(vf);
-            show(rect.adjust_ratio({ (float)vf.get_width(), (float)vf.get_height() }), alpha);
+            show(rect.adjust_ratio({(float)vf.get_width(), (float)vf.get_height()}), alpha);
         }
         else if (auto mf = frame.as<rs2::motion_frame>())
         {
-            _imu_render.render(frame, rect.adjust_ratio({ IMU_FRAME_WIDTH, IMU_FRAME_HEIGHT }));
+            _imu_render.render(frame, rect.adjust_ratio({IMU_FRAME_WIDTH, IMU_FRAME_HEIGHT}));
         }
         else if (auto pf = frame.as<rs2::pose_frame>())
         {
-            _pose_render.render(frame, rect.adjust_ratio({ IMU_FRAME_WIDTH, IMU_FRAME_HEIGHT }));
+            _pose_render.render(frame, rect.adjust_ratio({IMU_FRAME_WIDTH, IMU_FRAME_HEIGHT}));
         }
         else
             throw std::runtime_error("Rendering is currently supported for video, motion and pose frames only");
     }
 
 private:
-    GLuint          _gl_handle = 0;
-    rs2_stream      _stream_type = RS2_STREAM_ANY;
-    int             _stream_index{};
-    imu_renderer    _imu_render;
-    pose_renderer   _pose_render;
+    GLuint _gl_handle = 0;
+    rs2_stream _stream_type = RS2_STREAM_ANY;
+    int _stream_index{};
+    imu_renderer _imu_render;
+    pose_renderer _pose_render;
 };
 
 class window
 {
 public:
-    std::function<void(bool)>           on_left_mouse = [](bool) {};
+    std::function<void(bool)> on_left_mouse = [](bool) {};
     std::function<void(double, double)> on_mouse_scroll = [](double, double) {};
     std::function<void(double, double)> on_mouse_move = [](double, double) {};
-    std::function<void(int)>            on_key_release = [](int) {};
+    std::function<void(int)> on_key_release = [](int) {};
 
-    window(int width, int height, const char* title)
+    window(int width, int height, const char *title)
         : _width(width), _height(height), _canvas_left_top_x(0), _canvas_left_top_y(0), _canvas_width(width), _canvas_height(height)
     {
         glfwInit();
@@ -528,41 +538,37 @@ public:
         glfwMakeContextCurrent(win);
 
         glfwSetWindowUserPointer(win, this);
-        glfwSetMouseButtonCallback(win, [](GLFWwindow* w, int button, int action, int mods)
-            {
+        glfwSetMouseButtonCallback(win, [](GLFWwindow *w, int button, int action, int mods)
+                                   {
                 auto s = (window*)glfwGetWindowUserPointer(w);
-                if (button == 0) s->on_left_mouse(action == GLFW_PRESS);
-            });
+                if (button == 0) s->on_left_mouse(action == GLFW_PRESS); });
 
-        glfwSetScrollCallback(win, [](GLFWwindow* w, double xoffset, double yoffset)
-            {
+        glfwSetScrollCallback(win, [](GLFWwindow *w, double xoffset, double yoffset)
+                              {
                 auto s = (window*)glfwGetWindowUserPointer(w);
-                s->on_mouse_scroll(xoffset, yoffset);
-            });
+                s->on_mouse_scroll(xoffset, yoffset); });
 
-        glfwSetCursorPosCallback(win, [](GLFWwindow* w, double x, double y)
-            {
+        glfwSetCursorPosCallback(win, [](GLFWwindow *w, double x, double y)
+                                 {
                 auto s = (window*)glfwGetWindowUserPointer(w);
-                s->on_mouse_move(x, y);
-            });
+                s->on_mouse_move(x, y); });
 
-        glfwSetKeyCallback(win, [](GLFWwindow* w, int key, int scancode, int action, int mods)
-            {
+        glfwSetKeyCallback(win, [](GLFWwindow *w, int key, int scancode, int action, int mods)
+                           {
                 auto s = (window*)glfwGetWindowUserPointer(w);
                 if (0 == action) // on key release
                 {
                     s->on_key_release(key);
-                }
-            });
+                } });
     }
 
-    //another c'tor for adjusting specific frames in specific tiles, this window is NOT resizeable
-    window(unsigned width, unsigned height, const char* title, unsigned tiles_in_row, unsigned tiles_in_col, float canvas_width = 0.8f,
-        float canvas_height = 0.6f, float canvas_left_top_x = 0.1f, float canvas_left_top_y = 0.075f)
+    // another c'tor for adjusting specific frames in specific tiles, this window is NOT resizeable
+    window(unsigned width, unsigned height, const char *title, unsigned tiles_in_row, unsigned tiles_in_col, float canvas_width = 0.8f,
+           float canvas_height = 0.6f, float canvas_left_top_x = 0.1f, float canvas_left_top_y = 0.075f)
         : _width(width), _height(height), _tiles_in_row(tiles_in_row), _tiles_in_col(tiles_in_col)
 
     {
-        //user input verification for mosaic size, if invalid values were given - set to default
+        // user input verification for mosaic size, if invalid values were given - set to default
         if (canvas_width < 0 || canvas_width > 1 || canvas_height < 0 || canvas_height > 1 ||
             canvas_left_top_x < 0 || canvas_left_top_x > 1 || canvas_left_top_y < 0 || canvas_left_top_y > 1)
         {
@@ -573,21 +579,23 @@ public:
             canvas_left_top_y = 0.075f;
         }
 
-        //user input verification for number of tiles in row and column
-        if (_tiles_in_row <= 0) {
+        // user input verification for number of tiles in row and column
+        if (_tiles_in_row <= 0)
+        {
             _tiles_in_row = 4;
         }
-        if (_tiles_in_col <= 0) {
+        if (_tiles_in_col <= 0)
+        {
             _tiles_in_col = 2;
         }
 
-        //calculate canvas size
+        // calculate canvas size
         _canvas_width = int(_width * canvas_width);
         _canvas_height = int(_height * canvas_height);
         _canvas_left_top_x = _width * canvas_left_top_x;
         _canvas_left_top_y = _height * canvas_left_top_y;
 
-        //calculate tile size
+        // calculate tile size
         _tile_width_pixels = float(std::floor(_canvas_width / _tiles_in_row));
         _tile_height_pixels = float(std::floor(_canvas_height / _tiles_in_col));
 
@@ -600,32 +608,28 @@ public:
         glfwMakeContextCurrent(win);
 
         glfwSetWindowUserPointer(win, this);
-        glfwSetMouseButtonCallback(win, [](GLFWwindow* w, int button, int action, int mods)
-            {
+        glfwSetMouseButtonCallback(win, [](GLFWwindow *w, int button, int action, int mods)
+                                   {
                 auto s = (window*)glfwGetWindowUserPointer(w);
-                if (button == 0) s->on_left_mouse(action == GLFW_PRESS);
-            });
+                if (button == 0) s->on_left_mouse(action == GLFW_PRESS); });
 
-        glfwSetScrollCallback(win, [](GLFWwindow* w, double xoffset, double yoffset)
-            {
+        glfwSetScrollCallback(win, [](GLFWwindow *w, double xoffset, double yoffset)
+                              {
                 auto s = (window*)glfwGetWindowUserPointer(w);
-                s->on_mouse_scroll(xoffset, yoffset);
-            });
+                s->on_mouse_scroll(xoffset, yoffset); });
 
-        glfwSetCursorPosCallback(win, [](GLFWwindow* w, double x, double y)
-            {
+        glfwSetCursorPosCallback(win, [](GLFWwindow *w, double x, double y)
+                                 {
                 auto s = (window*)glfwGetWindowUserPointer(w);
-                s->on_mouse_move(x, y);
-            });
+                s->on_mouse_move(x, y); });
 
-        glfwSetKeyCallback(win, [](GLFWwindow* w, int key, int scancode, int action, int mods)
-            {
+        glfwSetKeyCallback(win, [](GLFWwindow *w, int key, int scancode, int action, int mods)
+                           {
                 auto s = (window*)glfwGetWindowUserPointer(w);
                 if (0 == action) // on key release
                 {
                     s->on_key_release(key);
-                }
-            });
+                } });
     }
 
     ~window()
@@ -666,10 +670,10 @@ public:
 
     void show(rs2::frame frame)
     {
-        show(frame, { 0, 0, (float)_width, (float)_height });
+        show(frame, {0, 0, (float)_width, (float)_height});
     }
 
-    void show(const rs2::frame& frame, const rect& rect)
+    void show(const rs2::frame &frame, const rect &rect)
     {
         if (auto fs = frame.as<rs2::frameset>())
             render_frameset(fs, rect);
@@ -683,7 +687,7 @@ public:
             render_pose_frame(pf, rect);
     }
 
-    void show(const std::map<int, rs2::frame>& frames)
+    void show(const std::map<int, rs2::frame> &frames)
     {
         // Render openGl mosaic of frames
         if (frames.size())
@@ -694,9 +698,9 @@ public:
             float view_width = float(_width / cols);
             float view_height = float(_height / rows);
             unsigned int stream_no = 0;
-            for (auto& frame : frames)
+            for (auto &frame : frames)
             {
-                rect viewport_loc{ view_width * (stream_no % cols), view_height * (stream_no / cols), view_width, view_height };
+                rect viewport_loc{view_width * (stream_no % cols), view_height * (stream_no / cols), view_width, view_height};
                 show(frame.second, viewport_loc);
                 stream_no++;
             }
@@ -704,42 +708,45 @@ public:
         else
         {
             _main_win.put_text("Connect one or more Intel RealSense devices and rerun the example",
-                0.4f, 0.5f, { 0.f,0.f, float(_width) , float(_height) });
+                               0.4f, 0.5f, {0.f, 0.f, float(_width), float(_height)});
         }
     }
 
-    //gets as argument a map of the -need to be drawn- frames with their tiles properties,
-    //which indicates where and what size should the frame be drawn on the canvas 
-    void show(const frames_mosaic& frames)
+    // gets as argument a map of the -need to be drawn- frames with their tiles properties,
+    // which indicates where and what size should the frame be drawn on the canvas
+    void show(const frames_mosaic &frames)
     {
         // Render openGl mosaic of frames
         if (frames.size())
         {
             // create vector of frames from map, and sort it by priority
-            std::vector <frame_and_tile_property> vector_frames;
-            //copy: map (values) -> vector
-            for (const auto& frame : frames) { vector_frames.push_back(frame.second); }
-            //sort in ascending order of the priority
+            std::vector<frame_and_tile_property> vector_frames;
+            // copy: map (values) -> vector
+            for (const auto &frame : frames)
+            {
+                vector_frames.push_back(frame.second);
+            }
+            // sort in ascending order of the priority
             std::sort(vector_frames.begin(), vector_frames.end(),
-                [](const frame_and_tile_property& frame1, const frame_and_tile_property& frame2)
-                {
-                    return frame1.second.priority < frame2.second.priority;
-                });
-            //create margin to the shown frame on tile
+                      [](const frame_and_tile_property &frame1, const frame_and_tile_property &frame2)
+                      {
+                          return frame1.second.priority < frame2.second.priority;
+                      });
+            // create margin to the shown frame on tile
             float frame_width_size_from_tile_width = 1.0f;
-            //iterate over frames in ascending priority order (so that lower priority frame is drawn first, and can be over-written by higher priority frame )
-            for (const auto& frame : vector_frames)
+            // iterate over frames in ascending priority order (so that lower priority frame is drawn first, and can be over-written by higher priority frame )
+            for (const auto &frame : vector_frames)
             {
                 tile_properties attr = frame.second;
-                rect viewport_loc{ _tile_width_pixels * attr.x + _canvas_left_top_x, _tile_height_pixels * attr.y + _canvas_left_top_y,
-                    _tile_width_pixels * attr.w * frame_width_size_from_tile_width, _tile_height_pixels * attr.h };
+                rect viewport_loc{_tile_width_pixels * attr.x + _canvas_left_top_x, _tile_height_pixels * attr.y + _canvas_left_top_y,
+                                  _tile_width_pixels * attr.w * frame_width_size_from_tile_width, _tile_height_pixels * attr.h};
                 show(frame.first, viewport_loc);
             }
         }
         else
         {
             _main_win.put_text("Connect one or more Intel RealSense devices and rerun the example",
-                0.3f, 0.5f, { float(_canvas_left_top_x), float(_canvas_left_top_y), float(_canvas_width) , float(_canvas_height) });
+                               0.3f, 0.5f, {float(_canvas_left_top_x), float(_canvas_left_top_y), float(_canvas_width), float(_canvas_height)});
         }
     }
 
@@ -748,28 +755,28 @@ public:
     // There may be several windows displayed on the sceen, as described in the frames_mosaic structure.
     // The windows are displayed in a reduced resolution, appropriate the amount of space allocated for them on the screen.
     // This function converts from screen pixel to original image pixel.
-    // 
+    //
     // Input:
     // pos - pixel in screen coordinates.
     // frames - structure of separate windows displayed on screen.
-    // Returns: 
+    // Returns:
     // The index of the window the screen pixel is in and the pixel in that window in the original window's resolution.
-    frame_pixel get_pos_on_current_image(float2 pos, const frames_mosaic& frames)
+    frame_pixel get_pos_on_current_image(float2 pos, const frames_mosaic &frames)
     {
-        frame_pixel res{ -1, -1,-1 };
-        for (auto& frame : frames)
+        frame_pixel res{-1, -1, -1};
+        for (auto &frame : frames)
         {
             if (auto vf = frame.second.first.as<rs2::video_frame>())
             {
                 tile_properties attr = frame.second.second;
                 float frame_width_size_from_tile_width = 1.0f;
-                rect viewport_loc{ _tile_width_pixels * attr.x + _canvas_left_top_x, _tile_height_pixels * attr.y + _canvas_left_top_y,
-                    _tile_width_pixels * attr.w * frame_width_size_from_tile_width, _tile_height_pixels * attr.h };
-                viewport_loc = viewport_loc.adjust_ratio({ (float)vf.get_width(), (float)vf.get_height() });
+                rect viewport_loc{_tile_width_pixels * attr.x + _canvas_left_top_x, _tile_height_pixels * attr.y + _canvas_left_top_y,
+                                  _tile_width_pixels * attr.w * frame_width_size_from_tile_width, _tile_height_pixels * attr.h};
+                viewport_loc = viewport_loc.adjust_ratio({(float)vf.get_width(), (float)vf.get_height()});
                 if (pos.x >= viewport_loc.x && pos.x < viewport_loc.x + viewport_loc.w &&
                     pos.y >= _height - (viewport_loc.y + viewport_loc.h) && pos.y < _height - viewport_loc.y)
                 {
-                    float image_rect_ratio = (float)vf.get_width() / viewport_loc.w;   //Ratio for y-axis is the same.
+                    float image_rect_ratio = (float)vf.get_width() / viewport_loc.w; // Ratio for y-axis is the same.
                     res.frame_idx = frame.first;
                     res.pixel.x = (pos.x - viewport_loc.x) * image_rect_ratio;
                     res.pixel.y = (pos.y - (_height - (viewport_loc.y + viewport_loc.h))) * image_rect_ratio;
@@ -781,10 +788,10 @@ public:
         return res;
     }
 
-    operator GLFWwindow* () { return win; }
+    operator GLFWwindow *() { return win; }
 
 private:
-    GLFWwindow* win;
+    GLFWwindow *win;
     std::map<int, texture> _textures;
     std::map<int, imu_renderer> _imus;
     std::map<int, pose_renderer> _poses;
@@ -796,25 +803,25 @@ private:
     float _tile_width_pixels, _tile_height_pixels;
     rs2::colorizer _colorizer;
 
-    void render_video_frame(const rs2::video_frame& f, const rect& r)
+    void render_video_frame(const rs2::video_frame &f, const rect &r)
     {
-        auto& t = _textures[f.get_profile().unique_id()];
+        auto &t = _textures[f.get_profile().unique_id()];
         t.render(f, r);
     }
 
-    void render_motion_frame(const rs2::motion_frame& f, const rect& r)
+    void render_motion_frame(const rs2::motion_frame &f, const rect &r)
     {
-        auto& i = _imus[f.get_profile().unique_id()];
+        auto &i = _imus[f.get_profile().unique_id()];
         i.render(f, r);
     }
 
-    void render_pose_frame(const rs2::pose_frame& f, const rect& r)
+    void render_pose_frame(const rs2::pose_frame &f, const rect &r)
     {
-        auto& i = _poses[f.get_profile().unique_id()];
+        auto &i = _poses[f.get_profile().unique_id()];
         i.render(f, r);
     }
 
-    void render_frameset(const rs2::frameset& frames, const rect& r)
+    void render_frameset(const rs2::frameset &frames, const rect &r)
     {
         std::vector<rs2::frame> supported_frames;
         for (auto f : frames)
@@ -826,7 +833,7 @@ private:
             return;
 
         std::sort(supported_frames.begin(), supported_frames.end(), [](rs2::frame first, rs2::frame second)
-            { return first.get_profile().stream_type() < second.get_profile().stream_type();  });
+                  { return first.get_profile().stream_type() < second.get_profile().stream_type(); });
 
         auto image_grid = calc_grid(r, supported_frames);
 
@@ -839,7 +846,7 @@ private:
         }
     }
 
-    bool can_render(const rs2::frame& f) const
+    bool can_render(const rs2::frame &f) const
     {
         auto format = f.get_profile().format();
         switch (format)
@@ -868,15 +875,15 @@ private:
             throw std::runtime_error("invalid window configuration request, failed to calculate window grid");
         while (w * h > streams)
             h > w ? h-- : w--;
-        while (w* h < streams)
+        while (w * h < streams)
             h > w ? w++ : h++;
         auto new_w = round(r.w / w);
         auto new_h = round(r.h / h);
         // column count, line count, cell width cell height
-        return rect{ static_cast<float>(w), static_cast<float>(h), static_cast<float>(new_w), static_cast<float>(new_h) };
+        return rect{static_cast<float>(w), static_cast<float>(h), static_cast<float>(new_w), static_cast<float>(new_h)};
     }
 
-    std::vector<rect> calc_grid(rect r, std::vector<rs2::frame>& frames)
+    std::vector<rect> calc_grid(rect r, std::vector<rs2::frame> &frames)
     {
         auto grid = calc_grid(r, frames.size());
 
@@ -894,11 +901,12 @@ private:
                 fh = (float)vf.get_height();
             }
             float cell_x_postion = (float)(mod * grid.w);
-            if (mod == 0) curr_line++;
+            if (mod == 0)
+                curr_line++;
             float cell_y_position = curr_line * grid.h;
-            float2 margin = { grid.w * 0.02f, grid.h * 0.02f };
-            auto r = rect{ cell_x_postion + margin.x, cell_y_position + margin.y, grid.w - 2 * margin.x, grid.h };
-            rv.push_back(r.adjust_ratio(float2{ fw, fh }));
+            float2 margin = {grid.w * 0.02f, grid.h * 0.02f};
+            auto r = rect{cell_x_postion + margin.x, cell_y_position + margin.y, grid.w - 2 * margin.x, grid.h};
+            rv.push_back(r.adjust_ratio(float2{fw, fh}));
         }
 
         return rv;
@@ -906,18 +914,22 @@ private:
 };
 
 // Struct to get keys pressed on window
-struct window_key_listener {
+struct window_key_listener
+{
     int last_key = GLFW_KEY_UNKNOWN;
 
-    window_key_listener(window& win) {
+    window_key_listener(window &win)
+    {
         win.on_key_release = std::bind(&window_key_listener::on_key_release, this, std::placeholders::_1);
     }
 
-    void on_key_release(int key) {
+    void on_key_release(int key)
+    {
         last_key = key;
     }
 
-    int get_key() {
+    int get_key()
+    {
         int key = last_key;
         last_key = GLFW_KEY_UNKNOWN;
         return key;
@@ -925,9 +937,10 @@ struct window_key_listener {
 };
 
 // Struct for managing rotation of pointcloud view
-struct glfw_state {
+struct glfw_state
+{
     glfw_state(float yaw = 15.0, float pitch = 15.0) : yaw(yaw), pitch(pitch), last_x(0.0), last_y(0.0),
-        ml(false), offset_x(2.f), offset_y(2.f), tex() {}
+                                                       ml(false), offset_x(2.f), offset_y(2.f), tex() {}
     double yaw;
     double pitch;
     double last_x;
@@ -939,7 +952,7 @@ struct glfw_state {
 };
 
 // Handles all the OpenGL calls needed to display the point cloud
-void draw_pointcloud(float width, float height, glfw_state& app_state, rs2::points& points)
+void draw_pointcloud(float width, float height, glfw_state &app_state, rs2::points &points)
 {
     if (!points)
         return;
@@ -968,12 +981,11 @@ void draw_pointcloud(float width, float height, glfw_state& app_state, rs2::poin
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_TEXTURE_2D);
     glBindTexture(GL_TEXTURE_2D, app_state.tex.get_gl_handle());
-    float tex_border_color[] = { 0.8f, 0.8f, 0.8f, 0.8f };
+    float tex_border_color[] = {0.8f, 0.8f, 0.8f, 0.8f};
     glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, tex_border_color);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, 0x812F); // GL_CLAMP_TO_EDGE
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, 0x812F); // GL_CLAMP_TO_EDGE
     glBegin(GL_POINTS);
-
 
     /* this segment actually prints the pointcloud */
     auto vertices = points.get_vertices();              // get vertices
@@ -996,16 +1008,28 @@ void draw_pointcloud(float width, float height, glfw_state& app_state, rs2::poin
     glPopAttrib();
 }
 
-void quat2mat(rs2_quaternion& q, GLfloat H[16])  // to column-major matrix
+void quat2mat(rs2_quaternion &q, GLfloat H[16]) // to column-major matrix
 {
-    H[0] = 1 - 2 * q.y * q.y - 2 * q.z * q.z; H[4] = 2 * q.x * q.y - 2 * q.z * q.w;     H[8] = 2 * q.x * q.z + 2 * q.y * q.w;     H[12] = 0.0f;
-    H[1] = 2 * q.x * q.y + 2 * q.z * q.w;     H[5] = 1 - 2 * q.x * q.x - 2 * q.z * q.z; H[9] = 2 * q.y * q.z - 2 * q.x * q.w;     H[13] = 0.0f;
-    H[2] = 2 * q.x * q.z - 2 * q.y * q.w;     H[6] = 2 * q.y * q.z + 2 * q.x * q.w;     H[10] = 1 - 2 * q.x * q.x - 2 * q.y * q.y; H[14] = 0.0f;
-    H[3] = 0.0f;                      H[7] = 0.0f;                      H[11] = 0.0f;                      H[15] = 1.0f;
+    H[0] = 1 - 2 * q.y * q.y - 2 * q.z * q.z;
+    H[4] = 2 * q.x * q.y - 2 * q.z * q.w;
+    H[8] = 2 * q.x * q.z + 2 * q.y * q.w;
+    H[12] = 0.0f;
+    H[1] = 2 * q.x * q.y + 2 * q.z * q.w;
+    H[5] = 1 - 2 * q.x * q.x - 2 * q.z * q.z;
+    H[9] = 2 * q.y * q.z - 2 * q.x * q.w;
+    H[13] = 0.0f;
+    H[2] = 2 * q.x * q.z - 2 * q.y * q.w;
+    H[6] = 2 * q.y * q.z + 2 * q.x * q.w;
+    H[10] = 1 - 2 * q.x * q.x - 2 * q.y * q.y;
+    H[14] = 0.0f;
+    H[3] = 0.0f;
+    H[7] = 0.0f;
+    H[11] = 0.0f;
+    H[15] = 1.0f;
 }
 
 // Handles all the OpenGL calls needed to display the point cloud w.r.t. static reference frame
-void draw_pointcloud_wrt_world(float width, float height, glfw_state& app_state, rs2::points& points, rs2_pose& pose, float H_t265_d400[16], std::vector<rs2_vector>& trajectory)
+void draw_pointcloud_wrt_world(float width, float height, glfw_state &app_state, rs2::points &points, rs2_pose &pose, float H_t265_d400[16], std::vector<rs2_vector> &trajectory)
 {
     if (!points)
         return;
@@ -1021,7 +1045,6 @@ void draw_pointcloud_wrt_world(float width, float height, glfw_state& app_state,
     glPushMatrix();
     gluPerspective(60, width / height, 0.01f, 10.0f);
 
-
     // viewing matrix
     glMatrixMode(GL_MODELVIEW);
     glPushMatrix();
@@ -1036,7 +1059,7 @@ void draw_pointcloud_wrt_world(float width, float height, glfw_state& app_state,
     glEnable(GL_DEPTH_TEST);
     glLineWidth(2.0f);
     glBegin(GL_LINE_STRIP);
-    for (auto&& v : trajectory)
+    for (auto &&v : trajectory)
     {
         glColor3f(0.0f, 1.0f, 0.0f);
         glVertex3f(v.x, v.y, v.z);
@@ -1057,12 +1080,11 @@ void draw_pointcloud_wrt_world(float width, float height, glfw_state& app_state,
     // T265 to D4xx extrinsics
     glMultMatrixf(H_t265_d400);
 
-
     glPointSize(width / 640);
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_TEXTURE_2D);
     glBindTexture(GL_TEXTURE_2D, app_state.tex.get_gl_handle());
-    float tex_border_color[] = { 0.8f, 0.8f, 0.8f, 0.8f };
+    float tex_border_color[] = {0.8f, 0.8f, 0.8f, 0.8f};
     glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, tex_border_color);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, 0x812F); // GL_CLAMP_TO_EDGE
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, 0x812F); // GL_CLAMP_TO_EDGE
@@ -1090,7 +1112,7 @@ void draw_pointcloud_wrt_world(float width, float height, glfw_state& app_state,
 }
 
 // Registers the state variable and callbacks to allow mouse control of the pointcloud
-void register_glfw_callbacks(window& app, glfw_state& app_state)
+void register_glfw_callbacks(window &app, glfw_state &app_state)
 {
     app.on_left_mouse = [&](bool pressed)
     {
@@ -1122,14 +1144,16 @@ void register_glfw_callbacks(window& app, glfw_state& app_state)
     {
         if (key == 32) // Escape
         {
-            app_state.yaw = app_state.pitch = 0; app_state.offset_x = app_state.offset_y = 0.0;
+            app_state.yaw = app_state.pitch = 0;
+            app_state.offset_x = app_state.offset_y = 0.0;
         }
     };
 }
 
-void get_screen_resolution(unsigned int& window_width, unsigned int& window_height) {
+void get_screen_resolution(unsigned int &window_width, unsigned int &window_height)
+{
     glfwInit();
-    const GLFWvidmode* mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
+    const GLFWvidmode *mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
 
     window_width = mode->width;
     window_height = mode->height;

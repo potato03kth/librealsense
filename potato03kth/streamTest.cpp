@@ -1,5 +1,6 @@
-#include <librealsense2/rs.hpp> // Include RealSense Cross Platform API
-#include "example.hpp"          // Include for QoL
+// #include <librealsense2/rs.hpp> // Include RealSense Cross Platform API
+#include "../include/librealsense2/rs.hpp" // Include RealSense Cross Platform API
+#include "../examples/example.hpp"          // Include for QoL
 
 // function that below flows as a "try and catch" sentention
 // every 1 loops excute if there arn't error catched

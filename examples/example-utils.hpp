@@ -5,7 +5,7 @@
 #include <iostream>
 #include <string>
 #include <map>
-#include <librealsense2/rs.hpp>
+#include "../include/librealsense2/rs.hpp"
 #include <algorithm>
 
 //////////////////////////////
@@ -13,20 +13,20 @@
 //////////////////////////////
 
 // Find devices with specified streams
-bool device_with_streams(std::vector <rs2_stream> stream_requests, std::string& out_serial)
+bool device_with_streams(std::vector<rs2_stream> stream_requests, std::string &out_serial)
 {
     rs2::context ctx;
     auto devs = ctx.query_devices();
-    std::vector <rs2_stream> unavailable_streams = stream_requests;
+    std::vector<rs2_stream> unavailable_streams = stream_requests;
     for (auto dev : devs)
     {
         std::map<rs2_stream, bool> found_streams;
-        for (auto& type : stream_requests)
+        for (auto &type : stream_requests)
         {
             found_streams[type] = false;
-            for (auto& sensor : dev.query_sensors())
+            for (auto &sensor : dev.query_sensors())
             {
-                for (auto& profile : sensor.get_stream_profiles())
+                for (auto &profile : sensor.get_stream_profiles())
                 {
                     if (profile.stream_type() == type)
                     {
@@ -40,7 +40,7 @@ bool device_with_streams(std::vector <rs2_stream> stream_requests, std::string& 
         }
         // Check if all streams are found in current device
         bool found_all_streams = true;
-        for (auto& stream : found_streams)
+        for (auto &stream : found_streams)
         {
             if (!stream.second)
             {
@@ -52,7 +52,7 @@ bool device_with_streams(std::vector <rs2_stream> stream_requests, std::string& 
             return true;
     }
     // After scanning all devices, not all requested streams were found
-    for (auto& type : unavailable_streams)
+    for (auto &type : unavailable_streams)
     {
         switch (type)
         {
